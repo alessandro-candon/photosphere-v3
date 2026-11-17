@@ -1,0 +1,53 @@
+# Environment and Firebase secrets
+.env
+.env.*
+!.env.example
+photosphere.config.json
+photosphere.config.json.*.tmp
+/firebase.json
+.firebase/
+firebase-debug.log*
+infra/firebase.local.json
+
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node / Nuxt
+node_modules/
+.nuxt/
+.output/
+.nitro/
+.cache/
+dist/
+coverage/
+
+# Local runtime state & caches
+.photosphere-cache/
+backups/
+skipped/
+data/
+tmp/
+
+# Downloaded model weights
+*.pth
+*.bin
+*.safetensors
+*.onnx
+
+#egm 
+comprehension_report.md
+concepts_brief.md
+critic_report.md
+design_draft.md
+evaluation_report.md
+zoom_out_report.md
+
+.agents/plugins/elephant-goldfish-model

@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://photosphere.local/contracts/photosphere_config.schema.json",
+  "title": "PhotosphereConfiguration",
+  "description": "Unified root configuration for Photosphere v3 bootstrap, CLI, SSR, and containers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "gcp", "storage", "firebase", "auth", "pipeline"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "gcp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_id", "location"],
+      "properties": {
+        "project_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "location": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "media_bucket",
+        "media_storage_class",
+        "data_bucket",
+        "data_storage_class"
+      ],
+      "properties": {
+        "media_bucket": {
+          "type": "string",
+          "minLength": 1
+        },
+        "media_storage_class": {
+          "type": "string",
+          "enum": ["STANDARD", "ARCHIVE"]
+        },
+        "data_bucket": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data_storage_class": {
+          "type": "string",
+          "enum": ["STANDARD", "ARCHIVE"]
+        }
+      }
+    },
+    "firebase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_id",
+        "app_id",
+        "api_key",
+        "auth_domain",
+        "storage_bucket",
+        "messaging_sender_id"
+      ],
+      "properties": {
+        "project_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "app_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "api_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "auth_domain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "storage_bucket": {
+          "type": "string",
+          "minLength": 1
+        },
+        "messaging_sender_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_emails", "admin_email"],
+      "properties": {
+        "allowed_emails": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+          }
+        },
+        "admin_email": {
+          "type": "string",
+          "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+        }
+      }
+    },
+    "pipeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default_lang", "target_lang"],
+      "properties": {
+        "default_lang": {
+          "type": "string",
+          "minLength": 2
+        },
+        "target_lang": {
+          "type": "string",
+          "minLength": 2
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://photosphere.local/contracts/media_database.schema.json",
+  "title": "PhotosphereMediaDatabase",
+  "description": "Flat dictionary mapping lowercase 40-char byte SHA-1 digests to Photosphere v3 media metadata records. TinyDB _default wrappers and local_file_path fields are forbidden.",
+  "type": "object",
+  "propertyNames": {
+    "pattern": "^[0-9a-f]{40}$"
+  },
+  "additionalProperties": {
+    "$ref": "#/$defs/MediaRecord"
+  },
+  "$defs": {
+    "MediaRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hash",
+        "average_hash",
+        "source_bucket_uri",
+        "thumbnail_bucket_uri",
+        "file_type",
+        "created_at",
+        "created_at_timestamp",
+        "latitude",
+        "longitude",
+        "geohash",
+        "label_indexes",
+        "caption_index"
+      ],
+      "properties": {
+        "hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "average_hash": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "source_bucket_uri": {
+          "type": "string",
+          "pattern": "^gs://[^/]+/.+"
+        },
+        "thumbnail_bucket_uri": {
+          "type": ["string", "null"],
+          "pattern": "^gs://[^/]+/.+"
+        },
+        "file_type": {
+          "type": "string",
+          "enum": ["FILE", "IMAGE", "VIDEO"]
+        },
+        "created_at": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "created_at_timestamp": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "latitude": {
+          "type": ["number", "null"],
+          "minimum": -90,
+          "maximum": 90
+        },
+        "longitude": {
+          "type": ["number", "null"],
+          "minimum": -180,
+          "maximum": 180
+        },
+        "geohash": {
+          "type": ["string", "null"]
+        },
+        "label_indexes": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "caption_index": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "gcp": {
+    "project_id": "photosphere-dev-example",
+    "location": "europe-west1"
+  },
+  "storage": {
+    "media_bucket": "photosphere-dev-example-media",
+    "media_storage_class": "STANDARD",
+    "data_bucket": "photosphere-dev-example-data",
+    "data_storage_class": "STANDARD"
+  },
+  "firebase": {
+    "project_id": "photosphere-dev-example",
+    "app_id": "1:1234567890:web:abcdef123456",
+    "api_key": "AIzaSyExampleKey1234567890",
+    "auth_domain": "photosphere-dev-example.firebaseapp.com",
+    "storage_bucket": "photosphere-dev-example-media",
+    "messaging_sender_id": "1234567890"
+  },
+  "auth": {
+    "allowed_emails": ["user@example.com"],
+    "admin_email": "user@example.com"
+  },
+  "pipeline": {
+    "default_lang": "en",
+    "target_lang": "it"
+  }
+}

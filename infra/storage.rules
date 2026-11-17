@@ -1,0 +1,19 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAllowedUser() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['<your-email>'];
+    }
+
+    match /{allPaths=**} {
+      allow read: if isAllowedUser();
+    }
+
+    // Only album edits are writable by authenticated web clients on the data bucket.
+    match /photosphere_albums.json {
+      allow write: if isAllowedUser();
+    }
+  }
+}

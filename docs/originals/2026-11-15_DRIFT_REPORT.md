@@ -1,0 +1,7 @@
+## README.md
+
+- **Missing Implementation (Greenfield Repository)**: `/home/ubuntu/dev/photosphere-v3` currently contains no source code, package manifests, or tests; all documented CLI ingestion, local AI/translation, thumbnailing, and dual-bucket GCS sync components are not yet implemented in this repository.
+- **Spec-to-Contract Divergence (`INITIAL_SPEC.MD` vs. `README.md`)**: `INITIAL_SPEC.MD` references generic filenames (`images.json`, `captions.json`, `tags.json`), UUIDs for captions/tags, and pHash as Primary Key, whereas `README.md` overrides these with the immutable `photosphere-v2` contracts (`photosphere_database_cloud.json`, `<lang>_photosphere_image_labelling_database_cloud.json`, `<lang>_photosphere_image_caption_database_cloud.json`, `photosphere_albums.json`, integer-indexed maps, and SHA-1 `hash` + `average_hash`).
+- **Planned Infrastructure & Format Divergence from `photosphere-v2`**:
+  - `README.md` specifies splitting DB files and thumbnails into a Standard-class GCS bucket separate from the Archive-class media bucket, whereas `../photosphere-v2` (`script/src/cloud/sync_in_cloud.py` and `script/src/ai/labbel_cloud_images.py`) currently reads/writes both media and DB artifacts against a single `bucket_name`.
+  - `README.md` intentionally eliminates `photosphere_database_cloud.pb` and all Protobuf generation/consumption logic present in `../photosphere-v2` (`script/src/protobuf/`, `spa/src/protobuf/`), consuming `photosphere_database_cloud.json` directly instead.
