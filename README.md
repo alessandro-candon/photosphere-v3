@@ -1,55 +1,152 @@
-# photosphere-v3 Blueprint
+# Photosphere v3
 
-## System Overview
+An edge-first, serverless personal photo and video library backed by Google Cloud Storage and Firebase. All heavy media processing—metadata extraction, thumbnails, deduplication, AI tagging/captioning, and translation—runs locally on your machine through the `photosphere` CLI, while a lightweight web app lets you browse, search, and organize albums.
 
-Project **Photosphere v3** is an Edge-First, serverless multimedia (photo and video) storage, indexing, and search platform. All heavy media processing—metadata extraction, perceptual/cryptographic hashing, thumbnail generation, AI tagging/captioning, and local translation—runs locally on the user's machine via a CLI ingestion pipeline, while GCP and Firebase provide passive storage and identity management.
+## Features
 
-The functional specification is defined in [INITIAL_SPEC.MD](./INITIAL_SPEC.MD), constrained by immutable data, authentication, and storage-location contracts inherited from `photosphere-v2` so existing cloud databases, media archives, and Firebase/GCP configurations remain compatible without recreation.
+- **Zero system media dependencies**: Processes photos (including HEIC) and videos natively on macOS, Linux, and Windows—no local `ffmpeg` or `libheif` install required.
+- **Smart deduplication**: Detects exact duplicates and visually similar media locally before uploading, moving skipped files to `./skipped/`.
+- **Local or remote AI**: Optionally generates English tags and captions (with CUDA, Apple Silicon MPS, CPU, or a remote API) and translates dictionaries into other languages.
+- **Cost-conscious cloud storage**: Keeps original media and `280x280` thumbnails in an Archive bucket and lightweight JSON indexes in a Standard bucket.
+- **Web gallery (`ssr/`)**: Browse your library, filter by tags/dates, and manage albums behind Google Sign-In.
 
-## Subdirectories & System Boundaries
+---
 
-- `./cli/` ([cli/README.md](./cli/README.md)): Python 3.12 ingestion, metadata/thumbnail/hashing extraction, SHA-1 deduplication into `skipped/`, modular AI labeling/captioning (`Protocol` boundary), `EasyNMT` translation, and dual-bucket GCS synchronization.
-- `./ssr/` ([ssr/README.md](./ssr/README.md)): Nuxt 4 SSR web server with Firebase Authentication + `ALLOWED_EMAILS` enforcement, mounted-volume DB/thumbnail/media caching, album persistence, and Firebase Storage API proxying across both buckets.
-- `./contracts/` ([contracts/README.md](./contracts/README.md)): Canonical JSON Schemas and cross-language fixture payloads verified by both Python (`pytest`) and TypeScript (`vitest`).
-- `./infra/` ([infra/README.md](./infra/README.md)): Multi-bucket Firebase Storage target configuration, email-gated `storage.rules`, and GCS `cors.json`.
-- `./scripts/` ([scripts/init/](./scripts/init/)): Portable Python bootstrap package (`make init` / `docker compose run --rm init`) for provisioning GCS buckets, Firebase Storage rules, Web App config, and Auth into a single root `photosphere.config.json`, plus the one-time `migrate_v2_to_v3.py` conversion script.
-- Functional & Architectural Specification: [INITIAL_SPEC.MD](./INITIAL_SPEC.MD)
-- Monorepo Scaffolding Design Document: [docs/designs/photosphere-v3-scaffolding.md](./docs/designs/photosphere-v3-scaffolding.md)
+## Quick Start (CLI)
 
-## Global Invariants
+### 1. Install the CLI
 
-### 1. Database Contracts (Migrated from `photosphere-v2`)
-To reuse existing media, labels, captions, and albums without re-ingesting files while removing TinyDB and Protobuf overhead:
-- **Main Media Table (`photosphere_database_cloud.json`)**: Flat minified JSON dictionary keyed by byte SHA-1 `hash` (`{ "<sha1_hash>": { ... } }`), migrated from `photosphere-v2`'s TinyDB `{"_default": ...}` wrapper (dropping `local_file_path`). Each record includes:
-  - `source_bucket_uri` (`gs://<media-bucket>/<path>`), `thumbnail_bucket_uri` (`gs://<media-bucket>/thumbnails/<basename>.<hash>.thumbnail.jpg`)
-  - `file_type` (`"FILE"`, `"IMAGE"`, `"VIDEO"`)
-  - `created_at` (ISO 8601 string), `created_at_timestamp` (integer Unix timestamp)
-  - `latitude`, `longitude`, `geohash`
-  - `hash` (SHA-1 hex digest of file bytes, primary key), `average_hash` (16x16 average perceptual hash string)
-  - `label_indexes` (array of integer IDs), `caption_index` (integer ID or `null`)
-- **No Protobuf Export (`.pb` Eliminated)**: `photosphere_database_cloud.pb` and all Protobuf conversion/decoding logic from `photosphere-v2` are deprecated and eliminated in `photosphere-v3`; `photosphere_database_cloud.json` is used directly.
-- **Labels / Tags Table (`<lang>_photosphere_image_labelling_database_cloud.json`)**: Minified JSON object mapping stringified integer index keys (`"0"`, `"1"`, ...) to unique tag strings (e.g., `en_photosphere_image_labelling_database_cloud.json`).
-- **Captions Table (`<lang>_photosphere_image_caption_database_cloud.json`)**: Minified JSON object mapping stringified integer index keys (`"0"`, `"1"`, ...) to caption strings (e.g., `en_photosphere_image_caption_database_cloud.json`).
-- **Albums Table (`photosphere_albums.json`)**: Client-writable JSON album definitions referencing media by SHA-1 `hash`.
+Requires [uv](https://docs.astral.sh/uv/) (`>= 0.6`) and Python `>= 3.12`.
 
-### 2. Authentication, GCP Project & Media Location
-- **Firebase Authentication & SSR Allowlist**: Frontend login uses Firebase Auth with Google Sign-In (`GoogleAuthProvider`), preserving existing Firebase project configuration (`FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID`). Both GCS buckets use identical email-gated `storage.rules` (`request.auth != null && request.auth.token.email == '<your-email>'`, with write access restricted to `/photosphere_albums.json` on the Standard bucket). In addition, SSR middleware must verify `email_verified === true` and membership in `ALLOWED_EMAILS` on every request before serving cached data or media.
-- **GCP Project & Original Media Location**: The existing GCP project and Archive-class GCS media bucket (`gs://<media-bucket>/...`) and existing object paths (`Year/Month/Day/<filename>`, preserved relative paths, and `thumbnails/`) must remain unchanged.
-- **Thumbnail Format**: JPEG thumbnails resized to max `280x280` pixels (`thumbnails/<basename>.<sha1_hash>.thumbnail.jpg`).
-- **Local Ingestion Auth**: CLI authenticates to GCP using local Application Default Credentials / Workload Identity (`gcloud auth application-default login` or `GOOGLE_APPLICATION_CREDENTIALS`).
+```bash
+# Core CLI (scanning, thumbnails, deduplication, cloud sync)
+uv tool install "git+https://github.com/<owner>/<repo>#subdirectory=cli"
 
-### 3. Dual-Bucket Split (Cost Optimization)
-- **Archive GCS Bucket (Media & Thumbnails)**: Retains original high-resolution photos and videos plus `thumbnails/`.
-- **Standard GCS Bucket (JSON Databases)**: Hosts the four frequently read/overwritten JSON database files (`photosphere_database_cloud.json`, `<lang>_photosphere_image_labelling_database_cloud.json`, `<lang>_photosphere_image_caption_database_cloud.json`, and `photosphere_albums.json`), eliminating Archive-class retrieval and early-deletion cost spikes during repeated ingestion uploads and SSR downloads.
+# With local AI tagging, captioning, and translation
+uv tool install "photosphere[ai] @ git+https://github.com/<owner>/<repo>#subdirectory=cli" --torch-backend=auto
+```
 
-## Global Side Effects
+If you are working from a local clone of this repository:
 
-- **Local Filesystem**: Ingestion moves unsupported, auxiliary, and duplicate files to a local `skipped/` directory (with a `skipped_manifest.json` audit log) and stages temporary thumbnails outside `/tmp` or in configured cache paths.
-- **Cloud Storage (Archive Bucket)**: Write-once uploads of new original media objects and `thumbnails/`.
-- **Cloud Storage (Standard Bucket)**: Frequent overwrites of `photosphere_database_cloud.json`, `<lang>_photosphere_image_labelling_database_cloud.json`, `<lang>_photosphere_image_caption_database_cloud.json`, and `photosphere_albums.json`.
-- **Frontend Client State**: Authenticated web clients update `photosphere_albums.json` via Firebase Storage / SSR APIs.
+```bash
+uv tool install ./cli
+# or with AI extras:
+uv tool install "./cli[ai]" --torch-backend=auto
+```
 
-## System Verification
+To upgrade later:
 
-- Bootstrap a new GCP/Firebase dev or prod project into root `photosphere.config.json`: `make init` (or `docker compose run --rm init`). Runtime `cli`, `ssr`, and `docker-build` fail fast if `photosphere.config.json` is missing.
-- Run offline lint, typechecks, and unit tests: `make check` (runs `ruff`, `pyright`, `mypy`, `pytest` across `cli/` and `scripts/`, plus `prettier`, `nuxt typecheck`, `vue-tsc`, and `vitest` across `ssr/`). `make dev-gcs` starts `fake-gcs-server` strictly for automated testing.
+```bash
+uv tool upgrade photosphere
+```
+
+### 2. Set Up Cloud & Credentials
+
+**First-time project bootstrap (admin):**  
+From a cloned repo with `gcloud` authenticated, provision your GCP buckets, Firebase Storage rules, and `photosphere.config.json`:
+
+```bash
+make init
+```
+
+**On any machine using the CLI:**
+
+1. Place your generated `photosphere.config.json` at `~/.photosphere/photosphere.config.json` (or pass `--config-file <path>`).
+2. Authenticate with Google Cloud:
+   ```bash
+   gcloud auth application-default login
+   ```
+   *(Alternatively, pass `--creds <path-to-key.json>`, set `GOOGLE_APPLICATION_CREDENTIALS`, or save credentials to `~/.photosphere/credentials.json`.)*
+3. Verify your setup:
+   ```bash
+   photosphere doctor
+   ```
+
+### 3. Common CLI Workflows
+
+**Preview an import without uploading anything:**
+
+```bash
+photosphere ingest /path/to/photos --dry-run
+```
+
+**Ingest a folder of photos and videos:**
+
+```bash
+# First run on a brand-new empty bucket (add --init-db)
+photosphere ingest /path/to/photos --init-db
+
+# Standard run (organizes files as YYYY/MM/DD/<filename> in the bucket)
+photosphere ingest /path/to/photos
+
+# Keep your existing folder hierarchy instead of organizing by date
+photosphere ingest /path/to/photos --routing-mode preserve
+
+# Skip AI tagging/captioning for faster uploads
+photosphere ingest /path/to/photos --no-ai
+```
+
+**Backfill AI tags & captions later:**
+
+```bash
+# Preview how many records need annotation
+photosphere annotate --dry-run
+
+# Annotate existing cloud records (using local files if available, or cloud thumbnails)
+photosphere annotate --local-media-dir /path/to/photos
+```
+
+**Translate tags and captions into another language:**
+
+```bash
+photosphere translate --target-lang it
+```
+
+**Verify cloud databases:**
+
+```bash
+photosphere verify-db
+```
+
+**Useful global flags:**
+
+- `--config-file <path>` — Use a specific `photosphere.config.json`
+- `--creds <path>` — Use a specific GCP credentials JSON file
+- `--verbose` — Show debug logs
+- `--no-progress` — Disable progress bars
+
+---
+
+## Web App (`ssr/`)
+
+Once you have a `photosphere.config.json` at the repo root, you can run the Nuxt web interface locally:
+
+```bash
+make setup
+make dev
+```
+
+Or run it with Docker:
+
+```bash
+docker compose --profile full up -d ssr
+```
+
+---
+
+## Repository Layout
+
+- [`cli/`](./cli/README.md) — `photosphere` Python CLI package
+- [`ssr/`](./ssr/README.md) — Nuxt 4 web application and Firebase Auth proxy
+- [`scripts/`](./scripts/init/) — GCP/Firebase bootstrap (`make init`) and v2-to-v3 migration tools
+- [`infra/`](./infra/README.md) — Firebase Storage rules and GCS CORS templates
+- [`contracts/`](./contracts/README.md) — Shared JSON schemas and fixtures
+- [`docs/`](./docs/) — Architecture and design documents
+
+## Development
+
+```bash
+make setup     # Install CLI and SSR dependencies
+make check     # Run linters, typechecks, and unit tests
+make dev-gcs   # Start local fake-gcs-server for integration tests
+```
