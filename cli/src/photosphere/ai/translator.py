@@ -9,7 +9,12 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from photosphere.ai.protocol import resolve_device
+from photosphere.ai.protocol import (
+    AINotConfiguredError,
+    configure_hf_cache_env,
+    format_hf_load_hint,
+    resolve_device,
+)
 from photosphere.models.database import KeyValueDictionary
 from photosphere.progress import tqdm_progress
 
@@ -154,42 +159,61 @@ class EasyNMTTranslator:
         self,
         cache_dir: Path,
         translator_fn: Callable[[str, str], str] | None = None,
+        *,
+        offline: bool = False,
     ) -> None:
         self.cache_dir = cache_dir
         self._translator_fn = translator_fn
+        self.offline = offline
         self._models: dict[str, tuple[Any, Any, Any, str]] = {}
 
     def _load_opus_mt(self, target_lang: str) -> tuple[Any, Any, Any, str]:
         if target_lang in self._models:
             return self._models[target_lang]
+        configure_hf_cache_env(None, offline=self.offline)
         try:
             torch = importlib.import_module("torch")
             transformers = importlib.import_module("transformers")
         except ImportError as exc:
-            raise RuntimeError(
+            raise AINotConfiguredError(
                 "Translation requires `[ai]` extras. Run `uv sync --extra ai`."
             ) from exc
 
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         model_id = f"Helsinki-NLP/opus-mt-en-{target_lang}"
         device = resolve_device("auto")
-        tokenizer = transformers.MarianTokenizer.from_pretrained(
-            model_id, cache_dir=str(self.cache_dir)
-        )
-        model = transformers.MarianMTModel.from_pretrained(
-            model_id, cache_dir=str(self.cache_dir)
-        )
-        model = model.to(device)
-        model.eval()
+        try:
+            tokenizer = transformers.MarianTokenizer.from_pretrained(
+                model_id,
+                cache_dir=str(self.cache_dir),
+                local_files_only=self.offline,
+            )
+            model = transformers.MarianMTModel.from_pretrained(
+                model_id,
+                cache_dir=str(self.cache_dir),
+                local_files_only=self.offline,
+            )
+            model = model.to(device)
+            model.eval()
+        except Exception as exc:
+            hint = format_hf_load_hint(
+                exc, cache_dir=self.cache_dir, offline=self.offline
+            )
+            raise AINotConfiguredError(
+                f"Failed to load translation model ({model_id}): {exc}{hint}"
+            ) from exc
         bundle = (tokenizer, model, torch, device)
         self._models[target_lang] = bundle
         return bundle
 
+    def prefetch(self, target_lang: str) -> None:
+        """Download and verify the Opus-MT translation model for target_lang."""
+        self._load_opus_mt(target_lang)
+        self._models.pop(target_lang, None)
+
     def _translate_opus_mt(self, text: str, target_lang: str) -> str:
         tokenizer, model, torch, device = self._load_opus_mt(target_lang)
-        encoded = tokenizer(
-            [text], return_tensors="pt", padding=True, truncation=True
-        )
+        encoded = tokenizer([text], return_tensors="pt", padding=True, truncation=True)
         encoded = {k: v.to(device) for k, v in encoded.items()}
         with torch.inference_mode():
             generated = model.generate(**encoded)

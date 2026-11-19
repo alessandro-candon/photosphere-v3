@@ -84,6 +84,7 @@ class AnnotatePipeline:
                 api_url=self.settings.ai_api_url,
                 api_key=self.settings.ai_api_key,
                 api_timeout=self.settings.ai_api_timeout,
+                offline=self.settings.ai_offline,
             )
         return self.ai_provider
 
@@ -181,7 +182,8 @@ class AnnotatePipeline:
         ):
             return
         translator = self.translator or EasyNMTTranslator(
-            self.settings.cache_dir / "easynmt"
+            self.settings.cache_dir / "easynmt",
+            offline=self.settings.ai_offline,
         )
         tgt_labels, tgt_l_gen = self._load_kv_store(
             f"{target_lang}_{LABELS_DB_SUFFIX}", allow_missing=True
@@ -353,15 +355,13 @@ class AnnotatePipeline:
                         continue
                     uncommitted += 1
                     if uncommitted >= commit_every:
-                        db_gen, en_labels_gen, en_captions_gen = (
-                            self._commit_databases(
-                                db_records,
-                                db_gen,
-                                en_labels,
-                                en_labels_gen,
-                                en_captions,
-                                en_captions_gen,
-                            )
+                        db_gen, en_labels_gen, en_captions_gen = self._commit_databases(
+                            db_records,
+                            db_gen,
+                            en_labels,
+                            en_labels_gen,
+                            en_captions,
+                            en_captions_gen,
                         )
                         uncommitted = 0
                         summary.periodic_commits += 1

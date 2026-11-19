@@ -108,6 +108,34 @@ photosphere translate --target-lang it
 photosphere verify-db
 ```
 
+### 4. Offline AI Setup (Corporate Networks / Blocked `huggingface.co`)
+
+Models and caches live in a single shared folder at `~/.photosphere/cache` (override with `PHOTOSPHERE_CACHE_DIR`). If your macOS laptop blocks `huggingface.co`, pre-download the models once on a machine with access (e.g., a cloud VM), copy `~/.photosphere/cache`, and run with `--offline`:
+
+1. **Pre-download on a machine with Hugging Face access:**
+   ```bash
+   photosphere prefetch-models --lang it
+   tar -czf ~/photosphere-cache.tar.gz -C ~/.photosphere cache
+   ```
+2. **Transfer to your macOS laptop** (via `scp` or a private GCS bucket):
+   ```bash
+   mkdir -p ~/.photosphere
+   # Option A: SCP from VM
+   scp <user>@<vm-host>:~/photosphere-cache.tar.gz ~/photosphere-cache.tar.gz
+   # Option B: Private GCS bucket
+   gcloud storage cp gs://<your-data-bucket>/tmp/photosphere-cache.tar.gz ~/photosphere-cache.tar.gz
+
+   tar -xzf ~/photosphere-cache.tar.gz -C ~/.photosphere
+   ```
+3. **Verify and run offline on Apple Silicon (MPS):**
+   ```bash
+   photosphere doctor
+   photosphere ingest /path/to/photos --offline
+   photosphere annotate --local-media-dir /path/to/photos --offline
+   photosphere translate --target-lang it --offline
+   ```
+   *(Optional: add `export PHOTOSPHERE_AI_OFFLINE=1` to `~/.zshrc` to enable offline mode by default.)*
+
 **Useful global flags:**
 
 - `--config-file <path>` — Use a specific `photosphere.config.json`

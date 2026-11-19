@@ -15,7 +15,9 @@ from photosphere.ai.protocol import (
     AIInferenceError,
     AINotConfiguredError,
     MediaAnnotation,
+    configure_hf_cache_env,
     empty_device_cache,
+    format_hf_load_hint,
     resolve_device,
     resolve_dtype,
 )
@@ -45,12 +47,14 @@ class Moondream2Provider:
         cache_dir: Path | None = None,
         max_image_size: int = 1024,
         max_tags: int = 5,
+        offline: bool = False,
     ) -> None:
         self.device = resolve_device(device)
         self.dtype_name = resolve_dtype(self.device)
         self.cache_dir = (cache_dir / "huggingface") if cache_dir is not None else None
         self.max_image_size = max_image_size
         self.max_tags = max_tags
+        self.offline = offline
         self._model: Any | None = None
         self._tokenizer: Any | None = None
         self._torch: Any | None = None
@@ -63,6 +67,8 @@ class Moondream2Provider:
             and self._torch is not None
         ):
             return self._model, self._tokenizer, self._torch
+
+        configure_hf_cache_env(self.cache_dir, offline=self.offline)
 
         try:
             torch = importlib.import_module("torch")
@@ -83,6 +89,7 @@ class Moondream2Provider:
                 MOONDREAM2_TOKENIZER_ID,
                 revision=MOONDREAM2_TOKENIZER_REVISION,
                 cache_dir=hf_cache,
+                local_files_only=self.offline,
             )
             model = transformers.AutoModelForCausalLM.from_pretrained(
                 MOONDREAM2_MODEL_ID,
@@ -90,13 +97,18 @@ class Moondream2Provider:
                 trust_remote_code=True,
                 dtype=dtype,
                 cache_dir=hf_cache,
+                local_files_only=self.offline,
             )
             model = model.to(device=self.device, dtype=dtype)
             model.eval()
         except Exception as exc:
             short_rev = MOONDREAM2_REVISION[:8]
+            hint = format_hf_load_hint(
+                exc, cache_dir=self.cache_dir, offline=self.offline
+            )
             raise AINotConfiguredError(
-                f"Failed to load Moondream2 ({MOONDREAM2_MODEL_ID}@{short_rev}): {exc}"
+                f"Failed to load Moondream2 "
+                f"({MOONDREAM2_MODEL_ID}@{short_rev}): {exc}{hint}"
             ) from exc
 
         load_ms = round((time.perf_counter() - started) * 1000, 1)
@@ -112,6 +124,11 @@ class Moondream2Provider:
         self._tokenizer = tokenizer
         self._torch = torch
         return model, tokenizer, torch
+
+    def prefetch(self) -> None:
+        """Download and verify Moondream2 weights, tokenizer, and modules in cache."""
+        self._ensure_loaded()
+        self.release()
 
     def analyze(self, image_path: Path) -> MediaAnnotation:
         """Generate a normalized caption and up to 5 descriptive tags for an image."""

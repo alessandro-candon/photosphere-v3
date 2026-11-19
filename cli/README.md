@@ -26,10 +26,14 @@ uv tool install ./cli
 uv tool install "./cli[ai]" --torch-backend=auto
 
 photosphere doctor
+photosphere prefetch-models --lang it
 photosphere ingest /path/to/media --routing-mode chronological --init-db --no-ai
 photosphere ingest /path/to/media --routing-mode chronological --dry-run
+photosphere ingest /path/to/media --offline
 ```
 
+- Default shared cache: `~/.photosphere/cache` (override with `PHOTOSPHERE_CACHE_DIR`); stores Hugging Face weights, `transformers_modules`, EasyNMT models, thumbnails, and DB snapshots in one portable directory.
+- `--offline` (or `PHOTOSPHERE_AI_OFFLINE=1`): Loads local AI and translation models with `local_files_only=True` without contacting `huggingface.co`.
 - `--routing-mode`: `chronological` (default; `YYYY/MM/DD/<filename>` or `no_datetime/<filename>`) or `preserve` (relative path from input directory).
 - `--commit-every`: Commits `en_` dictionaries and `photosphere_database_cloud.json` every `N` new uploads (default `100`).
 - `--dry-run`: Previews active `routing_mode`, planned GCS destination keys, and collisions without uploading, moving files to `skipped/`, writing thumbnails, or running AI.

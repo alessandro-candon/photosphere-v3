@@ -125,8 +125,10 @@ class PhotosphereSettings(BaseSettings):
         description="Local directory for unsupported and duplicate files.",
     )
     cache_dir: Path = Field(
-        default=Path("./.photosphere-cache"),
-        description="Local cache for checkpoints, DB snapshots, and thumbnails.",
+        default_factory=lambda: Path.home() / ".photosphere" / "cache",
+        description=(
+            "Local cache for checkpoints, DB snapshots, thumbnails, and AI models."
+        ),
     )
     missing_date_prefix: str = Field(
         default="no_datetime",
@@ -154,6 +156,13 @@ class PhotosphereSettings(BaseSettings):
     ai_provider: AIProviderMode = Field(
         default="local",
         description="Vision AI backend: local (MPS/CUDA/CPU) or remote HTTP API.",
+    )
+    ai_offline: bool = Field(
+        default=False,
+        description=(
+            "Load local AI and translation models strictly from cache "
+            "without contacting huggingface.co."
+        ),
     )
     ai_api_url: str | None = Field(
         default=None,

@@ -12,7 +12,12 @@ import click
 import structlog
 
 from photosphere import __version__
-from photosphere.ai.protocol import AINotConfiguredError, resolve_device
+from photosphere.ai.moondream2 import Moondream2Provider
+from photosphere.ai.protocol import (
+    AINotConfiguredError,
+    configure_hf_cache_env,
+    resolve_device,
+)
 from photosphere.ai.translator import EasyNMTTranslator, KeyValueStore
 from photosphere.config import (
     ConfigFileError,
@@ -186,6 +191,14 @@ def _build_gcs_client(
     is_flag=True,
     help="Run AI tagging/captioning during --dry-run and show results in JSON output.",
 )
+@click.option(
+    "--offline",
+    is_flag=True,
+    help=(
+        "Load AI and translation models strictly from local cache "
+        "without contacting huggingface.co."
+    ),
+)
 @click.pass_context
 def ingest(
     ctx: click.Context,
@@ -199,6 +212,7 @@ def ingest(
     ai_api_url: str | None,
     dry_run: bool,
     preview_ai: bool,
+    offline: bool,
 ) -> None:
     """Scan INPUT_DIR, isolate skipped/ duplicates, and sync to GCS."""
     overrides: dict[str, Any] = {}
@@ -208,6 +222,8 @@ def ingest(
         overrides["ai_provider"] = ai_provider.lower()
     if ai_api_url is not None:
         overrides["ai_api_url"] = ai_api_url
+    if offline:
+        overrides["ai_offline"] = True
     settings = _require_settings(ctx, **overrides)
     gcs_client = _build_gcs_client(ctx, settings)
     pipeline = IngestPipeline(settings, gcs_client)
@@ -283,6 +299,14 @@ def ingest(
     is_flag=True,
     help="Count unannotated candidate records without running AI or modifying GCS.",
 )
+@click.option(
+    "--offline",
+    is_flag=True,
+    help=(
+        "Load AI and translation models strictly from local cache "
+        "without contacting huggingface.co."
+    ),
+)
 @click.pass_context
 def annotate(
     ctx: click.Context,
@@ -295,6 +319,7 @@ def annotate(
     ai_provider: str | None,
     ai_api_url: str | None,
     dry_run: bool,
+    offline: bool,
 ) -> None:
     """Backfill AI tags and captions onto unannotated media records in GCS."""
     overrides: dict[str, Any] = {}
@@ -304,6 +329,8 @@ def annotate(
         overrides["ai_provider"] = ai_provider.lower()
     if ai_api_url is not None:
         overrides["ai_api_url"] = ai_api_url
+    if offline:
+        overrides["ai_offline"] = True
     settings = _require_settings(ctx, **overrides)
     gcs_client = _build_gcs_client(ctx, settings)
     pipeline = AnnotatePipeline(settings, gcs_client)
@@ -329,10 +356,21 @@ def annotate(
     required=True,
     help="Target language code (e.g. it, es, fr).",
 )
+@click.option(
+    "--offline",
+    is_flag=True,
+    help=(
+        "Load translation models strictly from local cache "
+        "without contacting huggingface.co."
+    ),
+)
 @click.pass_context
-def translate(ctx: click.Context, target_lang: str) -> None:
+def translate(ctx: click.Context, target_lang: str, offline: bool) -> None:
     """Translate missing en_ label/caption dictionary entries into TARGET_LANG."""
-    settings = _require_settings(ctx, target_lang=target_lang)
+    overrides: dict[str, Any] = {"target_lang": target_lang}
+    if offline:
+        overrides["ai_offline"] = True
+    settings = _require_settings(ctx, **overrides)
     gcs_client = _build_gcs_client(ctx, settings)
     gcs_client.verify_bucket_classes(
         settings.media_bucket,
@@ -340,33 +378,39 @@ def translate(ctx: click.Context, target_lang: str) -> None:
         expected_media_class=settings.media_storage_class,
         expected_data_class=settings.data_storage_class,
     )
-    translator = EasyNMTTranslator(settings.cache_dir / "easynmt")
+    translator = EasyNMTTranslator(
+        settings.cache_dir / "easynmt",
+        offline=settings.ai_offline,
+    )
     show_progress = bool(ctx.obj.get("show_progress", True)) if ctx.obj else True
 
-    for suffix in (LABELS_DB_SUFFIX, CAPTIONS_DB_SUFFIX):
-        en_raw, _ = gcs_client.download_json(settings.data_bucket, f"en_{suffix}")
-        en_store = KeyValueStore(settings.cache_dir / f"en_{suffix}")
-        en_store.store = {str(k): str(v) for k, v in dict(en_raw).items()}
-        en_store.flush_to_disk()
+    try:
+        for suffix in (LABELS_DB_SUFFIX, CAPTIONS_DB_SUFFIX):
+            en_raw, _ = gcs_client.download_json(settings.data_bucket, f"en_{suffix}")
+            en_store = KeyValueStore(settings.cache_dir / f"en_{suffix}")
+            en_store.store = {str(k): str(v) for k, v in dict(en_raw).items()}
+            en_store.flush_to_disk()
 
-        tgt_name = f"{target_lang}_{suffix}"
-        tgt_raw, tgt_gen = gcs_client.download_json(
-            settings.data_bucket, tgt_name, init_db=True
-        )
-        tgt_store = KeyValueStore(settings.cache_dir / tgt_name)
-        if isinstance(tgt_raw, dict):
-            tgt_store.store = {str(k): str(v) for k, v in tgt_raw.items()}
-        count = translator.translate_missing_entries(
-            en_store, tgt_store, target_lang, show_progress=show_progress
-        )
-        tgt_store.flush_to_disk()
-        gcs_client.upload_json_atomic(
-            settings.data_bucket,
-            tgt_name,
-            tgt_store.store,
-            if_generation_match=tgt_gen if tgt_gen is not None else 0,
-        )
-        click.echo(f"{tgt_name}: translated {count} new entries")
+            tgt_name = f"{target_lang}_{suffix}"
+            tgt_raw, tgt_gen = gcs_client.download_json(
+                settings.data_bucket, tgt_name, init_db=True
+            )
+            tgt_store = KeyValueStore(settings.cache_dir / tgt_name)
+            if isinstance(tgt_raw, dict):
+                tgt_store.store = {str(k): str(v) for k, v in tgt_raw.items()}
+            count = translator.translate_missing_entries(
+                en_store, tgt_store, target_lang, show_progress=show_progress
+            )
+            tgt_store.flush_to_disk()
+            gcs_client.upload_json_atomic(
+                settings.data_bucket,
+                tgt_name,
+                tgt_store.store,
+                if_generation_match=tgt_gen if tgt_gen is not None else 0,
+            )
+            click.echo(f"{tgt_name}: translated {count} new entries")
+    except AINotConfiguredError as exc:
+        raise click.ClickException(str(exc)) from exc
 
 
 @cli.command("verify-db")
@@ -416,6 +460,108 @@ def verify_db(ctx: click.Context, lang: str) -> None:
     )
 
 
+def _inspect_cached_models(cache_dir: Path) -> dict[str, Any]:
+    """Inspect local Hugging Face and EasyNMT model caches under cache_dir."""
+    hf_dir = cache_dir / "huggingface"
+    easynmt_dir = cache_dir / "easynmt"
+    easynmt_models = (
+        sorted(
+            p.name
+            for p in easynmt_dir.iterdir()
+            if p.is_dir() and p.name.startswith("models--Helsinki-NLP--")
+        )
+        if easynmt_dir.exists()
+        else []
+    )
+    return {
+        "moondream2": (hf_dir / "models--vikhyatk--moondream2").exists(),
+        "moondream2_tokenizer": (hf_dir / "models--moondream--starmie-v1").exists(),
+        "moondream2_modules": (hf_dir / "modules" / "transformers_modules").exists(),
+        "easynmt_models": easynmt_models,
+    }
+
+
+@cli.command("prefetch-models")
+@click.option(
+    "--cache-dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=None,
+    help=(
+        "Target cache directory "
+        "(defaults to PHOTOSPHERE_CACHE_DIR or ~/.photosphere/cache)."
+    ),
+)
+@click.option(
+    "--lang",
+    "langs",
+    multiple=True,
+    default=("it",),
+    show_default=True,
+    help="Target language code(s) for Opus-MT translation models (repeatable).",
+)
+@click.option(
+    "--no-vision",
+    is_flag=True,
+    help="Skip downloading Moondream2 vision weights, tokenizer, and modules.",
+)
+@click.option(
+    "--no-translate",
+    is_flag=True,
+    help="Skip downloading Helsinki-NLP Opus-MT translation models.",
+)
+@click.option(
+    "--device",
+    type=click.Choice(["auto", "cuda", "mps", "cpu"], case_sensitive=False),
+    default="cpu",
+    show_default=True,
+    help="Compute device used while verifying downloaded weights.",
+)
+def prefetch_models(
+    cache_dir: Path | None,
+    langs: tuple[str, ...],
+    no_vision: bool,
+    no_translate: bool,
+    device: str,
+) -> None:
+    """Pre-download Moondream2 and Opus-MT models into the shared cache directory."""
+    defaults = PhotosphereSettings()
+    target_cache_dir = cache_dir if cache_dir is not None else defaults.cache_dir
+    target_cache_dir.mkdir(parents=True, exist_ok=True)
+    configure_hf_cache_env(target_cache_dir / "huggingface", offline=False)
+
+    downloaded: dict[str, Any] = {
+        "cache_dir": str(target_cache_dir),
+        "vision": False,
+        "languages": [],
+    }
+    try:
+        if not no_vision:
+            provider = Moondream2Provider(
+                device=device.lower(),
+                cache_dir=target_cache_dir,
+                offline=False,
+            )
+            provider.prefetch()
+            downloaded["vision"] = True
+
+        if not no_translate:
+            translator = EasyNMTTranslator(
+                target_cache_dir / "easynmt",
+                offline=False,
+            )
+            for lang in langs:
+                normalized = lang.strip().lower()
+                if not normalized or normalized == "en":
+                    continue
+                translator.prefetch(normalized)
+                downloaded["languages"].append(normalized)
+    except AINotConfiguredError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    downloaded["cached_models"] = _inspect_cached_models(target_cache_dir)
+    click.echo(json.dumps(downloaded, indent=2))
+
+
 @cli.command()
 @click.pass_context
 def doctor(ctx: click.Context) -> None:
@@ -434,10 +580,16 @@ def doctor(ctx: click.Context) -> None:
         report["data_bucket"] = settings.data_bucket
         report["skipped_dir"] = str(settings.skipped_dir)
         report["cache_dir"] = str(settings.cache_dir)
+        report["ai_offline"] = settings.ai_offline
+        report["cached_models"] = _inspect_cached_models(settings.cache_dir)
         report["compute_device"] = resolve_device(settings.device)
     except ConfigFileError as exc:
         errors.append(f"config: {exc}")
         report["config_path"] = None
+        fallback_settings = PhotosphereSettings()
+        report["cache_dir"] = str(fallback_settings.cache_dir)
+        report["ai_offline"] = fallback_settings.ai_offline
+        report["cached_models"] = _inspect_cached_models(fallback_settings.cache_dir)
         report["compute_device"] = resolve_device()
 
     try:

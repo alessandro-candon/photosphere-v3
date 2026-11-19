@@ -167,6 +167,7 @@ class IngestPipeline:
                 api_url=self.settings.ai_api_url,
                 api_key=self.settings.ai_api_key,
                 api_timeout=self.settings.ai_api_timeout,
+                offline=self.settings.ai_offline,
             )
         return self.ai_provider
 
@@ -454,7 +455,8 @@ class IngestPipeline:
             self.translator is not None or summary.ai_annotated > 0
         ):
             translator = self.translator or EasyNMTTranslator(
-                self.settings.cache_dir / "easynmt"
+                self.settings.cache_dir / "easynmt",
+                offline=self.settings.ai_offline,
             )
             tgt_labels, tgt_l_gen = self._load_kv_store(
                 f"{target_lang}_{LABELS_DB_SUFFIX}", allow_missing=True

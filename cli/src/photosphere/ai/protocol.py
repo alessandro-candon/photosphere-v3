@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 from pathlib import Path
 from typing import Literal, Protocol, runtime_checkable
 
@@ -82,6 +83,51 @@ def empty_device_cache(device: str | None = None) -> None:
         torch.cuda.empty_cache()
 
 
+def configure_hf_cache_env(hf_cache_dir: Path | None, *, offline: bool = False) -> None:
+    """Configure Hugging Face cache and offline env vars before transformers import."""
+    if hf_cache_dir is not None:
+        hf_cache_dir.mkdir(parents=True, exist_ok=True)
+        modules_dir = hf_cache_dir / "modules"
+        modules_dir.mkdir(parents=True, exist_ok=True)
+        os.environ.setdefault("HF_HOME", str(hf_cache_dir))
+        os.environ.setdefault("HF_MODULES_CACHE", str(modules_dir))
+    if offline:
+        os.environ["HF_HUB_OFFLINE"] = "1"
+        os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
+
+def format_hf_load_hint(
+    exc: Exception, *, cache_dir: Path | None, offline: bool
+) -> str:
+    """Return offline/cache guidance when Hugging Face model loading fails."""
+    text = str(exc)
+    is_network_or_tls = any(
+        marker in text
+        for marker in (
+            "CERTIFICATE_VERIFY_FAILED",
+            "SSLError",
+            "huggingface.co",
+            "ConnectionError",
+            "MaxRetryError",
+        )
+    )
+    cache_hint = str(cache_dir) if cache_dir is not None else "~/.photosphere/cache"
+    if offline:
+        return (
+            f" Offline mode is enabled (`--offline` / `PHOTOSPHERE_AI_OFFLINE=1`); "
+            f"ensure the model cache is present under `{cache_hint}` "
+            f"(run `photosphere prefetch-models` on a machine with Hugging Face access "
+            f"and copy the cache directory)."
+        )
+    if is_network_or_tls:
+        return (
+            f" If `huggingface.co` is blocked on this network, run "
+            f"`photosphere prefetch-models` on a machine with access, copy "
+            f"`~/.photosphere/cache` into `{cache_hint}`, and re-run with `--offline`."
+        )
+    return ""
+
+
 def load_optional_ai_provider(
     device: str = "auto",
     *,
@@ -91,6 +137,7 @@ def load_optional_ai_provider(
     api_url: str | None = None,
     api_key: str | None = None,
     api_timeout: float = 60.0,
+    offline: bool = False,
 ) -> AIProvider:
     """Instantiate either the remote Moondream HTTP provider or local Moondream2."""
     if provider_mode == "remote":
@@ -105,6 +152,9 @@ def load_optional_ai_provider(
             max_image_size=max_image_size,
             timeout=api_timeout,
         )
+
+    hf_cache_dir = (cache_dir / "huggingface") if cache_dir is not None else None
+    configure_hf_cache_env(hf_cache_dir, offline=offline)
 
     resolved = resolve_device(device)
     try:
@@ -136,6 +186,7 @@ def load_optional_ai_provider(
         device=resolved,
         cache_dir=cache_dir,
         max_image_size=max_image_size,
+        offline=offline,
     )
 
 
