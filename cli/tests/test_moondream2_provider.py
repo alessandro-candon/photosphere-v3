@@ -242,6 +242,7 @@ def test_configure_hf_cache_env_and_offline_local_files_only(
     from photosphere.ai.protocol import configure_hf_cache_env
 
     monkeypatch.delenv("HF_HOME", raising=False)
+    monkeypatch.delenv("HF_HUB_CACHE", raising=False)
     monkeypatch.delenv("HF_MODULES_CACHE", raising=False)
     monkeypatch.delenv("HF_HUB_OFFLINE", raising=False)
     monkeypatch.delenv("TRANSFORMERS_OFFLINE", raising=False)
@@ -249,10 +250,20 @@ def test_configure_hf_cache_env_and_offline_local_files_only(
     hf_dir = tmp_path / "cache" / "huggingface"
     configure_hf_cache_env(hf_dir, offline=True)
     assert os.environ["HF_HOME"] == str(hf_dir)
+    assert os.environ["HF_HUB_CACHE"] == str(hf_dir / "hub")
     assert os.environ["HF_MODULES_CACHE"] == str(hf_dir / "modules")
     assert os.environ["HF_HUB_OFFLINE"] == "1"
     assert os.environ["TRANSFORMERS_OFFLINE"] == "1"
+    assert (hf_dir / "hub").is_dir()
     assert (hf_dir / "modules").is_dir()
+
+    local_tok_dir = (
+        hf_dir
+        / "models--moondream--starmie-v1"
+        / "snapshots"
+        / MOONDREAM2_TOKENIZER_REVISION
+    )
+    local_tok_dir.mkdir(parents=True)
 
     calls = _install_fake_torch_and_transformers(monkeypatch)
     provider = Moondream2Provider(
@@ -261,6 +272,7 @@ def test_configure_hf_cache_env_and_offline_local_files_only(
     img_path = create_sample_rgba_png(tmp_path / "offline.png", size=(300, 300))
     ann = provider.analyze(img_path)
     assert ann.labels
+    assert calls["tok_id"] == str(local_tok_dir)
     assert calls["tok_kwargs"]["local_files_only"] is True
     assert calls["model_kwargs"]["local_files_only"] is True
 

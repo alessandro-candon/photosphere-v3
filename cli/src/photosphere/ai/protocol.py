@@ -87,10 +87,18 @@ def configure_hf_cache_env(hf_cache_dir: Path | None, *, offline: bool = False) 
     """Configure Hugging Face cache and offline env vars before transformers import."""
     if hf_cache_dir is not None:
         hf_cache_dir.mkdir(parents=True, exist_ok=True)
+        hub_dir = hf_cache_dir / "hub"
+        hub_dir.mkdir(parents=True, exist_ok=True)
         modules_dir = hf_cache_dir / "modules"
         modules_dir.mkdir(parents=True, exist_ok=True)
-        os.environ.setdefault("HF_HOME", str(hf_cache_dir))
-        os.environ.setdefault("HF_MODULES_CACHE", str(modules_dir))
+        if offline:
+            os.environ["HF_HOME"] = str(hf_cache_dir)
+            os.environ["HF_HUB_CACHE"] = str(hub_dir)
+            os.environ["HF_MODULES_CACHE"] = str(modules_dir)
+        else:
+            os.environ.setdefault("HF_HOME", str(hf_cache_dir))
+            os.environ.setdefault("HF_HUB_CACHE", str(hub_dir))
+            os.environ.setdefault("HF_MODULES_CACHE", str(modules_dir))
     if offline:
         os.environ["HF_HUB_OFFLINE"] = "1"
         os.environ["TRANSFORMERS_OFFLINE"] = "1"

@@ -85,12 +85,26 @@ class Moondream2Provider:
 
         started = time.perf_counter()
         try:
-            tokenizer = transformers.AutoTokenizer.from_pretrained(
-                MOONDREAM2_TOKENIZER_ID,
-                revision=MOONDREAM2_TOKENIZER_REVISION,
-                cache_dir=hf_cache,
-                local_files_only=self.offline,
+            local_tok_dir = (
+                self.cache_dir
+                / "models--moondream--starmie-v1"
+                / "snapshots"
+                / MOONDREAM2_TOKENIZER_REVISION
+                if self.cache_dir is not None
+                else None
             )
+            if self.offline and local_tok_dir is not None and local_tok_dir.is_dir():
+                tokenizer = transformers.AutoTokenizer.from_pretrained(
+                    str(local_tok_dir),
+                    local_files_only=True,
+                )
+            else:
+                tokenizer = transformers.AutoTokenizer.from_pretrained(
+                    MOONDREAM2_TOKENIZER_ID,
+                    revision=MOONDREAM2_TOKENIZER_REVISION,
+                    cache_dir=hf_cache,
+                    local_files_only=self.offline,
+                )
             model = transformers.AutoModelForCausalLM.from_pretrained(
                 MOONDREAM2_MODEL_ID,
                 revision=MOONDREAM2_REVISION,

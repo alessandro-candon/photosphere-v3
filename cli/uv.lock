@@ -1520,7 +1520,7 @@ requires-dist = [
     { name = "structlog", specifier = ">=25.1.0" },
     { name = "torch", marker = "extra == 'ai'", specifier = ">=2.5.0" },
     { name = "tqdm", specifier = ">=4.67.0" },
-    { name = "transformers", marker = "extra == 'ai'", specifier = ">=4.47.0" },
+    { name = "transformers", marker = "extra == 'ai'", specifier = ">=4.47.0,<5.0.0" },
 ]
 provides-extras = ["ai"]
 
