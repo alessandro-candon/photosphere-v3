@@ -1,0 +1,70 @@
+services:
+  # Automated test GCS emulator only (decoupled from default cli/ssr runtime services)
+  fake-gcs-server:
+    image: fsouza/fake-gcs-server:latest
+    container_name: photosphere_v3_fake_gcs
+    restart: unless-stopped
+    command: -scheme http -port 4443 -public-host localhost:4443
+    ports:
+      - "${GCS_PORT:-4443}:4443"
+    volumes:
+      - fake_gcs_data:/data
+    environment:
+      STORAGE_EMULATOR_HOST: http://localhost:4443
+
+  init:
+    build:
+      context: .
+      dockerfile: cli/Dockerfile
+      target: bootstrap
+    image: photosphere-init:local
+    profiles:
+      - init
+    stdin_open: true
+    tty: true
+    entrypoint: ["photosphere", "init"]
+    volumes:
+      - .:/app
+      - ${HOME}/.config/gcloud:/home/appuser/.config/gcloud:ro
+
+  cli:
+    build:
+      context: .
+      dockerfile: cli/Dockerfile
+    image: photosphere-cli:local
+    profiles:
+      - cli
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      PHOTOSPHERE_SKIPPED_DIR: /data/skipped
+      PHOTOSPHERE_CACHE_DIR: /data/cache
+      CLOUDSDK_CONFIG: /data/gcloud
+      HOME: /tmp
+    volumes:
+      - ./photosphere.config.json:/app/photosphere.config.json:ro
+      - ${MEDIA_DIR:-./data/media}:/data/media
+      - ./skipped:/data/skipped
+      - ./.photosphere-cache:/data/cache
+      - ${HOME}/.config/gcloud:/data/gcloud:ro
+
+  ssr:
+    build:
+      context: .
+      dockerfile: ssr/Dockerfile
+    image: photosphere-ssr:local
+    profiles:
+      - full
+    restart: unless-stopped
+    ports:
+      - "${SSR_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      NITRO_HOST: 0.0.0.0
+      NITRO_PORT: 3000
+      PHOTOSPHERE_MOUNTED_VOLUME_PATH: /mnt/photosphere
+    volumes:
+      - ./photosphere.config.json:/app/photosphere.config.json:ro
+      - ./data/photosphere:/mnt/photosphere
+
+volumes:
+  fake_gcs_data:

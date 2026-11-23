@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAllowedUser() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['<your-email>'];
+    }
+
+    match /photosphere_albums.json {
+      allow read, write: if isAllowedUser();
+    }
+
+    match /{allPaths=**} {
+      allow read: if isAllowedUser();
+    }
+  }
+}

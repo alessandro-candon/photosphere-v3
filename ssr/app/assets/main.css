@@ -1,0 +1,101 @@
+@import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --surface: #f8fafc;
+  --surface-elevated: #ffffff;
+  --foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
+  --primary: #1a73e8;
+  --primary-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --ring: #1a73e8;
+  --scrim: rgba(15, 23, 42, 0.72);
+  --font-sans:
+    Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+}
+
+.dark {
+  --background: #0b0f17;
+  --surface: #121826;
+  --surface-elevated: #1b2333;
+  --foreground: #f1f5f9;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --primary: #60a5fa;
+  --primary-foreground: #091324;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #263248;
+  --ring: #60a5fa;
+  --scrim: rgba(3, 7, 18, 0.85);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-scrim: var(--scrim);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Deterministic Google Photos-style varied-row-span CSS Grid masonry */
+.ps-masonry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  grid-auto-rows: 120px;
+  grid-auto-flow: dense;
+}
+
+@media (min-width: 640px) {
+  .ps-masonry-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 4px;
+    grid-auto-rows: 135px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ps-masonry-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 6px;
+    grid-auto-rows: 145px;
+  }
+}
+
+.ps-masonry-item {
+  grid-row-end: span 1;
+}
+
+.ps-masonry-item:nth-child(7n + 2),
+.ps-masonry-item:nth-child(7n + 4),
+.ps-masonry-item:nth-child(7n + 6) {
+  grid-row-end: span 2;
+}

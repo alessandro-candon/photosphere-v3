@@ -1,0 +1,12 @@
+{
+  "storage": [
+    {
+      "target": "media",
+      "rules": "storage.rules"
+    },
+    {
+      "target": "data",
+      "rules": "storage.rules"
+    }
+  ]
+}

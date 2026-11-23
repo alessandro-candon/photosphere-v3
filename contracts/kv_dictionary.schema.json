@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://photosphere.local/contracts/kv_dictionary.schema.json",
+  "title": "PhotosphereKeyValueDictionary",
+  "description": "Flat minified JSON dictionary mapping stringified non-negative integer indexes to non-empty label or caption strings.",
+  "type": "object",
+  "propertyNames": {
+    "pattern": "^(0|[1-9][0-9]*)$"
+  },
+  "additionalProperties": {
+    "type": "string",
+    "minLength": 1
+  }
+}

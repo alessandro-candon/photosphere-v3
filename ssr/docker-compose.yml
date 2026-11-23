@@ -1,0 +1,17 @@
+services:
+  photosphere-ssr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env.example
+    environment:
+      NODE_ENV: production
+      NITRO_HOST: 0.0.0.0
+      NITRO_PORT: 3000
+      PHOTOSPHERE_MOUNTED_VOLUME_PATH: /mnt/photosphere
+    volumes:
+      - ./mounted_cache:/mnt/photosphere
+    restart: unless-stopped

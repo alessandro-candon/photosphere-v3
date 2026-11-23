@@ -1,0 +1,33 @@
+# --- General Settings ---
+target-version = "py312"
+line-length = 88
+
+exclude = [
+    ".git",
+    ".photosphere-cache",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+# --- Linter ---
+[lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # Pyflakes
+    "C90",  # mccabe complexity (C901)
+    "I",    # isort
+    "B",    # flake8-bugbear
+]
+ignore = []
+
+[lint.mccabe]
+max-complexity = 10
+
+# --- Formatter ---
+[format]
+quote-style = "double"
+indent-style = "space"
