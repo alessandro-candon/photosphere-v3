@@ -1,5 +1,7 @@
 # Photosphere
 
+![Photosphere Demo](docs/assets/gif.gif)
+
 **Photosphere** is a private photo and video archive backed by Google Cloud Storage and Firebase. It gives you:
 
 - **A CLI (`photosphere`)** to organize, deduplicate, generate thumbnails, automatically tag and caption your photos with AI, translate tags/captions into other languages, and upload everything safely to your own cloud buckets.

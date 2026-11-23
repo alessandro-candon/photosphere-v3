@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Clip path for the rounded squircle app icon background -->
+    <clipPath id="squircle-clip">
+      <rect x="24" y="24" width="464" height="464" rx="112" ry="112" />
+    </clipPath>
+
+    <!-- Clip path for the main outer sphere -->
+    <clipPath id="sphere-clip">
+      <circle cx="256" cy="256" r="168" />
+    </clipPath>
+
+    <!-- Clip path for the inner lens ring -->
+    <clipPath id="inner-lens-clip">
+      <circle cx="256" cy="256" r="64" />
+    </clipPath>
+  </defs>
+
+  <!-- Main Icon Container -->
+  <g clip-path="url(#squircle-clip)">
+    <!-- Deep Navy Background -->
+    <rect x="0" y="0" width="512" height="512" fill="#0B2249" />
+
+    <!-- Main Photosphere Group -->
+    <g clip-path="url(#sphere-clip)">
+      <!-- Base Teal Sphere (Bottom-Right Half) -->
+      <circle cx="256" cy="256" r="168" fill="#17938C" />
+
+      <!-- Coral Orange Top-Left Diagonal Split (-45 deg) -->
+      <polygon points="0,0 512,0 0,512" fill="#F96944" />
+
+      <!-- Outer Rim Highlight Arcs -->
+      <path d="M 105 325 A 164 164 0 0 1 132 140" fill="none" stroke="#0B2249" stroke-width="10" stroke-linecap="round" />
+      <path d="M 380 140 A 164 164 0 0 1 407 325" fill="none" stroke="#28C3B9" stroke-width="14" stroke-linecap="round" />
+
+      <!-- Concentric White Highlight Arcs (Top-Left Coral Side) -->
+      <path d="M 140 172 A 140 140 0 0 1 232 118" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" />
+      <path d="M 142 322 A 126 126 0 0 1 345 170" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" />
+      <path d="M 164 294 A 98 98 0 0 1 252 158" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" />
+
+      <!-- Concentric Mint/Teal Arcs (Bottom-Right Teal Side) -->
+      <path d="M 345 170 A 126 126 0 0 1 174 345" fill="none" stroke="#45D0C6" stroke-width="11" stroke-linecap="round" />
+      <path d="M 332 204 A 98 98 0 0 1 196 328" fill="none" stroke="#45D0C6" stroke-width="11" stroke-linecap="round" />
+
+      <!-- Stylized Globe Latitude/Longitude & Aperture Blades (Navy Cutouts) -->
+      <!-- Top-Right Aperture Blades -->
+      <path d="M 278 86 Q 345 145 362 248" fill="none" stroke="#0B2249" stroke-width="10" stroke-linecap="round" />
+      <path d="M 310 100 Q 385 155 412 228" fill="none" stroke="#0B2249" stroke-width="10" stroke-linecap="round" />
+      <path d="M 358 145 Q 382 238 352 332" fill="none" stroke="#0B2249" stroke-width="10" stroke-linecap="round" />
+      <path d="M 256 130 A 126 126 0 0 1 402 256" fill="none" stroke="#0B2249" stroke-width="10" stroke-linecap="round" />
+
+      <!-- Bottom-Left Aperture Blades -->
+      <path d="M 116 156 Q 100 245 148 338" fill="none" stroke="#0B2249" stroke-width="10" stroke-linecap="round" />
+      <path d="M 92 225 Q 112 315 178 382" fill="none" stroke="#0B2249" stroke-width="10" stroke-linecap="round" />
+      <path d="M 98 302 Q 185 372 288 356" fill="none" stroke="#0B2249" stroke-width="10" stroke-linecap="round" />
+      <path d="M 134 346 Q 212 396 292 384" fill="none" stroke="#0B2249" stroke-width="10" stroke-linecap="round" />
+
+      <!-- Center Camera Lens Assembly -->
+      <circle cx="256" cy="256" r="78" fill="#0B2249" />
+      
+      <!-- Inner Lens Ring (Split White & Teal) -->
+      <g clip-path="url(#inner-lens-clip)">
+        <circle cx="256" cy="256" r="64" fill="#28C3B9" />
+        <polygon points="150,150 362,150 150,362" fill="#FFFFFF" />
+      </g>
+
+      <!-- Inner Navy Lens Ring -->
+      <circle cx="256" cy="256" r="52" fill="#0B2249" />
+
+      <!-- Aperture Inner Accent Ring -->
+      <circle cx="256" cy="256" r="40" fill="none" stroke="#17938C" stroke-width="9" />
+      <path d="M 216 256 A 40 40 0 0 1 284 228" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" />
+
+      <!-- Deep Lens Pupil -->
+      <circle cx="256" cy="256" r="28" fill="#0B2249" />
+
+      <!-- Specular Lens Reflections -->
+      <path d="M 239 253 A 17 17 0 0 1 253 239" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" />
+      <path d="M 272 260 A 17 17 0 0 1 260 272" fill="none" stroke="#17938C" stroke-width="6" stroke-linecap="round" />
+    </g>
+
+    <!-- "V3" Badge Overlay (Bottom-Right) -->
+    <g transform="translate(260, 336)">
+      <!-- Navy Cutout Backing / Stroke so V3 cleanly separates from the globe -->
+      <g stroke="#0B2249" stroke-width="22" stroke-linejoin="round" stroke-linecap="round" fill="#0B2249">
+        <!-- Letter V -->
+        <polygon points="0,0 26,0 50,70 74,0 100,0 63,104 37,104" />
+        <!-- Number 3 -->
+        <path d="M 114,4 L 180,4 L 180,22 L 151,45 C 171,48 184,60 184,77 C 184,96 168,107 144,107 C 127,107 113,101 105,92 L 119,75 C 126,82 134,86 144,86 C 155,86 161,81 161,73 C 161,65 154,60 140,60 L 130,60 L 130,44 L 153,24 L 114,24 Z" />
+      </g>
+
+      <!-- Crisp White Foreground Typography -->
+      <g fill="#FFFFFF">
+        <!-- Letter V -->
+        <polygon points="0,0 26,0 50,70 74,0 100,0 63,104 37,104" />
+        <!-- Number 3 -->
+        <path d="M 114,4 L 180,4 L 180,22 L 151,45 C 171,48 184,60 184,77 C 184,96 168,107 144,107 C 127,107 113,101 105,92 L 119,75 C 126,82 134,86 144,86 C 155,86 161,81 161,73 C 161,65 154,60 140,60 L 130,60 L 130,44 L 153,24 L 114,24 Z" />
+      </g>
+    </g>
+  </g>
+</svg>
