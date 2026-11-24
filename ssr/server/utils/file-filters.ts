@@ -34,12 +34,13 @@ export interface MediaGridItemDto {
   hasThumbnail: boolean
   thumbnailUrl: string | null
   sourceUrl: string
-}
-
-export interface MediaDetailDto extends MediaGridItemDto {
   latitude: number | null
   longitude: number | null
   geohash: string | null
+  distanceKm?: number | null
+}
+
+export interface MediaDetailDto extends MediaGridItemDto {
   labels: string[]
   caption: string | null
 }
@@ -86,14 +87,20 @@ const parseDateBoundMs = (raw: string | undefined, bound: 'start' | 'end'): numb
 export const filterMediaHashes = (
   snapshot: MediaDatabaseSnapshot,
   filters: MediaFilterParams,
-  options: { dicts?: LanguageDictionaries; albums?: AlbumRecord[] } = {}
+  options: { dicts?: LanguageDictionaries; albums?: AlbumRecord[]; baseHashes?: string[] } = {}
 ): string[] => {
-  let baseHashes = snapshot.sortedHashes
+  let baseHashes = options.baseHashes ?? snapshot.sortedHashes
   if (filters.memoryDate) {
     if (!MONTH_DAY_REGEX.test(filters.memoryDate)) {
       return []
     }
-    baseHashes = snapshot.byMonthDay[filters.memoryDate] || []
+    const memoryHashes = snapshot.byMonthDay[filters.memoryDate] || []
+    if (options.baseHashes) {
+      const allowed = new Set(options.baseHashes)
+      baseHashes = memoryHashes.filter((h) => allowed.has(h))
+    } else {
+      baseHashes = memoryHashes
+    }
   }
 
   let requiredAlbumSet: Set<string> | null = null
@@ -252,7 +259,46 @@ export const filterMediaHashes = (
   return result
 }
 
-export const toMediaGridItem = (rec: RawMediaRecord): MediaGridItemDto => {
+export const sortMediaHashesByDistance = (
+  snapshot: MediaDatabaseSnapshot,
+  hashes: string[],
+  centerLat: number,
+  centerLng: number
+): Array<{ hash: string; distanceKm: number }> => {
+  const entries: Array<{ hash: string; distanceKm: number; timestamp: number }> = []
+  for (const hash of hashes) {
+    const rec = snapshot.recordsByHash[hash]
+    if (
+      !rec ||
+      typeof rec.latitude !== 'number' ||
+      !Number.isFinite(rec.latitude) ||
+      typeof rec.longitude !== 'number' ||
+      !Number.isFinite(rec.longitude)
+    ) {
+      continue
+    }
+    entries.push({
+      hash,
+      distanceKm: haversineDistanceKm(centerLat, centerLng, rec.latitude, rec.longitude),
+      timestamp: rec.created_at_timestamp ?? -Infinity,
+    })
+  }
+  entries.sort((a, b) => {
+    if (a.distanceKm !== b.distanceKm) {
+      return a.distanceKm - b.distanceKm
+    }
+    if (b.timestamp !== a.timestamp) {
+      return b.timestamp - a.timestamp
+    }
+    return a.hash.localeCompare(b.hash)
+  })
+  return entries.map(({ hash, distanceKm }) => ({ hash, distanceKm }))
+}
+
+export const toMediaGridItem = (
+  rec: RawMediaRecord,
+  distanceKm?: number | null
+): MediaGridItemDto => {
   const hasThumbnail = rec.thumbnail_bucket_uri !== null || rec.file_type === 'IMAGE'
   return {
     hash: rec.hash,
@@ -263,6 +309,10 @@ export const toMediaGridItem = (rec: RawMediaRecord): MediaGridItemDto => {
     hasThumbnail,
     thumbnailUrl: hasThumbnail ? `/api/media/${rec.hash}?variant=thumbnail` : null,
     sourceUrl: `/api/media/${rec.hash}?variant=source`,
+    latitude: rec.latitude,
+    longitude: rec.longitude,
+    geohash: rec.geohash,
+    ...(distanceKm !== undefined ? { distanceKm } : {}),
   }
 }
 
@@ -279,9 +329,6 @@ export const toMediaDetail = (rec: RawMediaRecord, dicts: LanguageDictionaries):
 
   return {
     ...toMediaGridItem(rec),
-    latitude: rec.latitude,
-    longitude: rec.longitude,
-    geohash: rec.geohash,
     labels,
     caption,
   }

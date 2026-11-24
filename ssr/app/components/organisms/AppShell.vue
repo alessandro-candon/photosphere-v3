@@ -111,7 +111,15 @@
 </template>
 
 <script setup lang="ts">
-import { Camera, FolderHeart, Images, LogOut, Settings, Sparkles } from 'lucide-vue-next'
+import {
+  Camera,
+  FolderHeart,
+  Images,
+  LogOut,
+  Map as MapIcon,
+  Settings,
+  Sparkles,
+} from 'lucide-vue-next'
 import ThemeToggle from '../common/ThemeToggle.vue'
 import Button from '../ui/Button.vue'
 
@@ -131,6 +139,7 @@ const navItems = [
   { to: '/', label: 'Photos', icon: Images },
   { to: '/memories', label: 'Memories', icon: Sparkles },
   { to: '/albums', label: 'Albums', icon: FolderHeart },
+  { to: '/map', label: 'Map', icon: MapIcon },
   { to: '/settings', label: 'Settings', icon: Settings },
 ] as const
 

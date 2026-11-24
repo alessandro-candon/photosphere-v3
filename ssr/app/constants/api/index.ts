@@ -10,4 +10,5 @@ export const API_ENDPOINTS = {
   searchSuggestions: '/api/search/suggestions',
   locationSearch: '/api/location/search',
   albums: '/api/albums',
+  mapHeatmap: '/api/map/heatmap',
 } as const

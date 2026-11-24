@@ -46,6 +46,8 @@ export const useGalleryFilters = () => {
         : undefined
     const dateFrom = firstString(route.query.dateFrom)
     const dateTo = firstString(route.query.dateTo)
+    const memoryDate = firstString(route.query.memoryDate)
+    const album = firstString(route.query.album)
     const lat = optionalNumber(route.query.lat)
     const lng = optionalNumber(route.query.lng)
     const radiusKm = optionalNumber(route.query.radiusKm)
@@ -60,6 +62,8 @@ export const useGalleryFilters = () => {
       ...(fileType ? { fileType } : {}),
       ...(dateFrom ? { dateFrom } : {}),
       ...(dateTo ? { dateTo } : {}),
+      ...(memoryDate ? { memoryDate } : {}),
+      ...(album ? { album } : {}),
       ...(lat !== undefined && lng !== undefined ? { lat, lng } : {}),
       ...(radiusKm !== undefined ? { radiusKm } : {}),
       ...(place ? { place } : {}),
@@ -76,6 +80,8 @@ export const useGalleryFilters = () => {
     if (next.fileType) query.fileType = next.fileType
     if (next.dateFrom) query.dateFrom = next.dateFrom
     if (next.dateTo) query.dateTo = next.dateTo
+    if (next.memoryDate) query.memoryDate = next.memoryDate
+    if (next.album) query.album = next.album
     if (next.notInAlbum) query.notInAlbum = 'true'
     if (next.lat !== undefined && next.lng !== undefined) {
       query.lat = String(next.lat)

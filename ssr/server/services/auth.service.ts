@@ -1,7 +1,11 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import { createError } from 'h3'
 import { getAuth, type DecodedIdToken } from 'firebase-admin/auth'
-import { ensureFirebaseAdminInitialized } from './firebase-admin.service'
+import {
+  ensureFirebaseAdminInitialized,
+  hasFirebaseAdminCredentials,
+} from './firebase-admin.service'
+import { logger } from './logger.service'
 import type { AuthUser } from '../types/auth'
 
 export type VerifyTokenFn = (idToken: string) => Promise<DecodedIdToken>
@@ -67,7 +71,7 @@ export const extractCookieValue = (
 
 const defaultVerifyToken: VerifyTokenFn = async (idToken: string) => {
   ensureFirebaseAdminInitialized()
-  return await getAuth().verifyIdToken(idToken, true)
+  return await getAuth().verifyIdToken(idToken, hasFirebaseAdminCredentials())
 }
 
 export const verifyAuthorizedUser = async (
@@ -86,7 +90,15 @@ export const verifyAuthorizedUser = async (
   let decoded: DecodedIdToken
   try {
     decoded = await verifyToken(token)
-  } catch {
+  } catch (error) {
+    const errObj = error as { code?: string; message?: string }
+    logger.warn(
+      {
+        code: errObj?.code,
+        err: errObj?.message || String(error),
+      },
+      'firebase_id_token_verify_failed'
+    )
     throw createError({
       statusCode: 401,
       statusMessage: 'Unauthorized: Invalid or expired Firebase ID token',
