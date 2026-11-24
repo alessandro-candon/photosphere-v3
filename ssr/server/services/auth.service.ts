@@ -1,7 +1,10 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import { createError } from 'h3'
 import { getAuth, type DecodedIdToken } from 'firebase-admin/auth'
-import { ensureFirebaseAdminInitialized } from './firebase-admin.service'
+import {
+  ensureFirebaseAdminInitialized,
+  hasFirebaseAdminCredentials,
+} from './firebase-admin.service'
 import { logger } from './logger.service'
 import type { AuthUser } from '../types/auth'
 
@@ -68,7 +71,7 @@ export const extractCookieValue = (
 
 const defaultVerifyToken: VerifyTokenFn = async (idToken: string) => {
   ensureFirebaseAdminInitialized()
-  return await getAuth().verifyIdToken(idToken, true)
+  return await getAuth().verifyIdToken(idToken, hasFirebaseAdminCredentials())
 }
 
 export const verifyAuthorizedUser = async (
