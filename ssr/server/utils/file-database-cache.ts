@@ -1,10 +1,13 @@
 import { createError } from 'h3'
 import type {
+  GeohashClusterBucket,
+  GeohashPrecision,
   KeyValueDictionary,
   LanguageDictionaries,
   MediaDatabaseSnapshot,
   RawMediaRecord,
 } from '../types/cache'
+import { encodeGeohash, GEOHASH_PRECISIONS, isValidCoordinatePair } from './geohash'
 import { loadJsonDatabase, type StorageOptions } from './storage-download'
 
 const SHA1_REGEX = /^[0-9a-f]{40}$/
@@ -146,9 +149,22 @@ export const buildDerivedMediaIndexes = (
 ): {
   byMonthDay: Record<string, string[]>
   byLabelIndex: Record<number, string[]>
+  geolocatedHashes: string[]
+  unfilteredGeohashBuckets: Record<GeohashPrecision, GeohashClusterBucket[]>
 } => {
   const byMonthDay: Record<string, string[]> = {}
   const byLabelIndex: Record<number, string[]> = {}
+  const geolocatedHashes: string[] = []
+  const accumulators: Record<
+    GeohashPrecision,
+    Map<string, { count: number; sumLat: number; sumLng: number }>
+  > = {
+    2: new Map(),
+    3: new Map(),
+    4: new Map(),
+    5: new Map(),
+    6: new Map(),
+  }
 
   for (const hash of sortedHashes) {
     const rec = recordsByHash[hash]
@@ -170,9 +186,50 @@ export const buildDerivedMediaIndexes = (
       }
       byLabelIndex[labelIndex].push(hash)
     }
+
+    if (isValidCoordinatePair(rec.latitude, rec.longitude)) {
+      const lat = rec.latitude as number
+      const lng = rec.longitude as number
+      geolocatedHashes.push(hash)
+
+      const existingGeohash =
+        typeof rec.geohash === 'string' ? rec.geohash.trim().toLowerCase() : ''
+      const canonicalGeohash =
+        existingGeohash.length >= 6 ? existingGeohash : encodeGeohash(lat, lng, 6)
+      if (rec.geohash !== canonicalGeohash) {
+        rec.geohash = canonicalGeohash
+      }
+
+      for (const precision of GEOHASH_PRECISIONS) {
+        const prefix = canonicalGeohash.slice(0, precision)
+        const map = accumulators[precision]
+        const bucket = map.get(prefix)
+        if (bucket) {
+          bucket.count += 1
+          bucket.sumLat += lat
+          bucket.sumLng += lng
+        } else {
+          map.set(prefix, { count: 1, sumLat: lat, sumLng: lng })
+        }
+      }
+    }
   }
 
-  return { byMonthDay, byLabelIndex }
+  const unfilteredGeohashBuckets = {} as Record<GeohashPrecision, GeohashClusterBucket[]>
+  for (const precision of GEOHASH_PRECISIONS) {
+    const list: GeohashClusterBucket[] = []
+    for (const [prefix, acc] of accumulators[precision].entries()) {
+      list.push({
+        prefix,
+        count: acc.count,
+        avgLat: acc.sumLat / acc.count,
+        avgLng: acc.sumLng / acc.count,
+      })
+    }
+    unfilteredGeohashBuckets[precision] = list
+  }
+
+  return { byMonthDay, byLabelIndex, geolocatedHashes, unfilteredGeohashBuckets }
 }
 
 export const getMediaDatabase = async (
@@ -191,12 +248,15 @@ export const getMediaDatabase = async (
     options
   )
   const sortedHashes = sortMediaHashesDescending(recordsByHash)
-  const { byMonthDay, byLabelIndex } = buildDerivedMediaIndexes(recordsByHash, sortedHashes)
+  const { byMonthDay, byLabelIndex, geolocatedHashes, unfilteredGeohashBuckets } =
+    buildDerivedMediaIndexes(recordsByHash, sortedHashes)
   const snapshot: MediaDatabaseSnapshot = {
     recordsByHash,
     sortedHashes,
     byMonthDay,
     byLabelIndex,
+    geolocatedHashes,
+    unfilteredGeohashBuckets,
     loadedAt: Date.now(),
   }
   mediaDbCache = snapshot

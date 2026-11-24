@@ -22,11 +22,22 @@ export interface AlbumRecord {
   hashes: string[]
 }
 
+export type GeohashPrecision = 2 | 3 | 4 | 5 | 6
+
+export interface GeohashClusterBucket {
+  prefix: string
+  count: number
+  avgLat: number
+  avgLng: number
+}
+
 export interface MediaDatabaseSnapshot {
   recordsByHash: Record<string, RawMediaRecord>
   sortedHashes: string[]
   byMonthDay: Record<string, string[]>
   byLabelIndex: Record<number, string[]>
+  geolocatedHashes: string[]
+  unfilteredGeohashBuckets: Record<GeohashPrecision, GeohashClusterBucket[]>
   loadedAt: number
 }
 

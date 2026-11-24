@@ -32,6 +32,8 @@
         </div>
       </SettingsSectionCard>
 
+      <MapSettingsCard />
+
       <SettingsSectionCard
         title="Account"
         description="Signed-in Google identity and repository access level."
@@ -74,6 +76,7 @@ import { LogOut } from 'lucide-vue-next'
 import LanguageSelector from '../components/common/LanguageSelector.vue'
 import ThemeToggle from '../components/common/ThemeToggle.vue'
 import AdminRefreshCard from '../components/organisms/AdminRefreshCard.vue'
+import MapSettingsCard from '../components/organisms/MapSettingsCard.vue'
 import PageHeader from '../components/organisms/PageHeader.vue'
 import SettingsSectionCard from '../components/organisms/SettingsSectionCard.vue'
 import Badge from '../components/ui/Badge.vue'

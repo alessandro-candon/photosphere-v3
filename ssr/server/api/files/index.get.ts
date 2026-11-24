@@ -9,6 +9,7 @@ import {
 } from '../../utils/file-database-cache'
 import {
   filterMediaHashes,
+  sortMediaHashesByDistance,
   toMediaGridItem,
   type MediaFilterParams,
   type SearchFieldMode,
@@ -40,6 +41,16 @@ const parseSearchField = (raw: unknown): SearchFieldMode | undefined => {
   })
 }
 
+const parseSortOrder = (raw: unknown): 'date' | 'distance' => {
+  if (typeof raw !== 'string' || !raw.trim()) return 'date'
+  const clean = raw.trim().toLowerCase()
+  if (clean === 'date' || clean === 'distance') return clean
+  throw createError({
+    statusCode: 400,
+    statusMessage: "Invalid sort parameter: expected 'date' or 'distance'",
+  })
+}
+
 export default defineEventHandler(async (event) => {
   const cfg = useRuntimeConfig(event)
   const idToken = requireBearerToken(event)
@@ -49,8 +60,9 @@ export default defineEventHandler(async (event) => {
   const parsedPage = parseInt(String(query.page || '1'), 10)
   const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1
   const parsedLimit = parseInt(String(query.limit || '50'), 10)
-  const limit = Math.min(Math.max(Number.isFinite(parsedLimit) ? parsedLimit : 50, 1), 100)
+  const limit = Math.min(Math.max(Number.isFinite(parsedLimit) ? parsedLimit : 50, 1), 200)
   const skip = (page - 1) * limit
+  const sort = parseSortOrder(query.sort)
 
   const rawFileType = typeof query.fileType === 'string' ? query.fileType.trim().toUpperCase() : ''
   let fileType: MediaFileType | undefined
@@ -112,12 +124,34 @@ export default defineEventHandler(async (event) => {
   }
 
   const matchingHashes = filterMediaHashes(snapshot, filters, { dicts, albums })
+
+  if (sort === 'distance' && lat !== undefined && lng !== undefined) {
+    const distanceSorted = sortMediaHashesByDistance(snapshot, matchingHashes, lat, lng)
+    const totalCount = distanceSorted.length
+    const paginatedEntries = distanceSorted.slice(skip, skip + limit)
+    const items = paginatedEntries
+      .map((entry) => {
+        const rec = snapshot.recordsByHash[entry.hash]
+        if (!rec) return null
+        return toMediaGridItem(rec, Number(entry.distanceKm.toFixed(3)))
+      })
+      .filter((item): item is NonNullable<typeof item> => Boolean(item))
+
+    return {
+      items,
+      totalCount,
+      page,
+      limit,
+      hasMore: skip + limit < totalCount,
+    }
+  }
+
   const totalCount = matchingHashes.length
   const paginatedHashes = matchingHashes.slice(skip, skip + limit)
   const items = paginatedHashes
     .map((hash) => snapshot.recordsByHash[hash])
     .filter((rec): rec is NonNullable<typeof rec> => Boolean(rec))
-    .map(toMediaGridItem)
+    .map((rec) => toMediaGridItem(rec))
 
   return {
     items,

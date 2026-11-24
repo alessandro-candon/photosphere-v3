@@ -7,9 +7,12 @@ import type {
   AlbumSummary,
   DatabaseSnapshotResponse,
   GalleryFilters,
+  HeatmapApiResponse,
+  HeatmapQueryParams,
   LocationSearchResult,
   MediaDetail,
   MediaGridItem,
+  MediaSortOrder,
   PaginatedResponse,
   RefreshDatabaseResponse,
   SearchFieldMode,
@@ -122,13 +125,15 @@ export const usePhotosphereApi = () => {
   const listFiles = async (
     filters: GalleryFilters = {},
     page = 1,
-    limit = 50
+    limit = 50,
+    options: { sort?: MediaSortOrder; signal?: AbortSignal } = {}
   ): Promise<PaginatedResponse<MediaGridItem>> => {
     const params = new URLSearchParams({
       page: String(page),
       limit: String(limit),
       lang: preferredLang.value,
     })
+    if (options.sort) params.set('sort', options.sort)
     if (filters.q) params.set('q', filters.q)
     if (filters.searchField) params.set('searchField', filters.searchField)
     if (filters.labelIndex !== undefined) params.set('labelIndex', String(filters.labelIndex))
@@ -146,7 +151,39 @@ export const usePhotosphereApi = () => {
         params.set('radiusKm', String(filters.radiusKm))
       }
     }
-    return await requestJson<PaginatedResponse<MediaGridItem>>(`${API_ENDPOINTS.files}?${params}`)
+    return await requestJson<PaginatedResponse<MediaGridItem>>(`${API_ENDPOINTS.files}?${params}`, {
+      signal: options.signal,
+    })
+  }
+
+  const fetchHeatmapClusters = async (
+    queryParams: HeatmapQueryParams,
+    filters: GalleryFilters = {},
+    signal?: AbortSignal
+  ): Promise<HeatmapApiResponse> => {
+    const params = new URLSearchParams({
+      north: String(queryParams.north),
+      south: String(queryParams.south),
+      east: String(queryParams.east),
+      west: String(queryParams.west),
+      zoom: String(queryParams.zoom),
+      mode: queryParams.mode,
+      lang: preferredLang.value,
+    })
+    if (filters.q) params.set('q', filters.q)
+    if (filters.searchField) params.set('searchField', filters.searchField)
+    if (filters.labelIndex !== undefined) params.set('labelIndex', String(filters.labelIndex))
+    if (filters.captionIndex !== undefined) params.set('captionIndex', String(filters.captionIndex))
+    if (filters.fileType) params.set('fileType', filters.fileType)
+    if (filters.dateFrom) params.set('dateFrom', filters.dateFrom)
+    if (filters.dateTo) params.set('dateTo', filters.dateTo)
+    if (filters.memoryDate) params.set('memoryDate', filters.memoryDate)
+    if (filters.album) params.set('album', filters.album)
+    if (filters.notInAlbum) params.set('notInAlbum', 'true')
+
+    return await requestJson<HeatmapApiResponse>(`${API_ENDPOINTS.mapHeatmap}?${params}`, {
+      signal,
+    })
   }
 
   const getFileDetail = async (hash: string): Promise<MediaDetail> => {
@@ -255,6 +292,7 @@ export const usePhotosphereApi = () => {
     fetchMe,
     bootstrapSession,
     listFiles,
+    fetchHeatmapClusters,
     getFileDetail,
     fetchSearchSuggestions,
     searchLocations,

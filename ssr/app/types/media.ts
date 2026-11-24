@@ -9,14 +9,50 @@ export interface MediaGridItem {
   hasThumbnail: boolean
   thumbnailUrl: string | null
   sourceUrl: string
-}
-
-export interface MediaDetail extends MediaGridItem {
   latitude: number | null
   longitude: number | null
   geohash: string | null
+  distanceKm?: number | null
+}
+
+export interface MediaDetail extends MediaGridItem {
   labels: string[]
   caption: string | null
+}
+
+export type MediaSortOrder = 'date' | 'distance'
+export type BasemapStyle = 'dark' | 'light' | 'satellite'
+export type HeatmapDataMode = 'geohash' | 'raw'
+export type HeatmapPointTuple = [number, number, number]
+
+export interface WorldHeatmapSettings {
+  basemap: BasemapStyle
+  dataMode: HeatmapDataMode
+  dynamicRadius: boolean
+  baseRadius: number
+  blur: number
+  maxIntensity: number
+  maxInspectResults: number
+}
+
+export interface HeatmapQueryParams {
+  north: number
+  south: number
+  east: number
+  west: number
+  zoom: number
+  mode: HeatmapDataMode
+}
+
+export interface HeatmapApiResponse {
+  points: HeatmapPointTuple[]
+  precision: 2 | 3 | 4 | 5 | 6
+  requestedMode: HeatmapDataMode
+  effectiveMode: HeatmapDataMode
+  fallbackTriggered: boolean
+  viewportPointCount: number
+  totalGeolocatedCount: number
+  maxBucketCount: number
 }
 
 export type SearchFieldMode = 'labels' | 'captions'
