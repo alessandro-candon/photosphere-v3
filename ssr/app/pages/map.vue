@@ -108,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import type * as LeafletTypes from 'leaflet'
 import { SlidersHorizontal } from 'lucide-vue-next'
@@ -151,7 +151,7 @@ const HEATMAP_GRADIENT: Record<number, string> = {
 const ESRI_ATTRIBUTION = 'Tiles &copy; Esri'
 
 const authStore = useAuthStore()
-const { canEditAlbums } = storeToRefs(authStore)
+const { canEditAlbums, isAuthenticated } = storeToRefs(authStore)
 const { settings, reloadMapSettings } = useMapSettings()
 const { filters, applyFilters, clearAllFilters } = useGalleryFilters()
 const { fetchHeatmapClusters, listFiles, getFileDetail, fetchSearchSuggestions, searchLocations } =
@@ -292,7 +292,7 @@ const applyHeatLayerOptions = () => {
 }
 
 const fetchHeatmapForCurrentViewport = async () => {
-  if (!mapInstance || !heatLayer) return
+  if (!mapInstance || !heatLayer || !isAuthenticated.value) return
   if (heatmapAbortController) {
     heatmapAbortController.abort()
   }
@@ -541,51 +541,78 @@ const handleExternalSettingsEvent = () => {
   reloadMapSettings()
 }
 
-onMounted(async () => {
-  if (!import.meta.client || !mapContainer.value) return
-  reloadMapSettings()
+let mapInitializing = false
 
-  const leafletModule = await import('leaflet')
-  L = (leafletModule.default ?? leafletModule) as typeof LeafletTypes
-  ;(window as unknown as { L: typeof LeafletTypes }).L = L
-  await import('leaflet/dist/leaflet.css')
-  await import('leaflet.heat')
+const initializeMap = async (containerEl: HTMLElement) => {
+  if (!import.meta.client || mapInstance || mapInitializing) return
+  mapInitializing = true
+  try {
+    reloadMapSettings()
 
-  const initialLat = filters.value.lat ?? 25
-  const initialLng = filters.value.lng ?? 10
-  const initialZoom = filters.value.lat !== undefined && filters.value.lng !== undefined ? 10 : 3
+    const leafletModule = await import('leaflet')
+    L = (leafletModule.default ?? leafletModule) as typeof LeafletTypes
+    ;(window as unknown as { L: typeof LeafletTypes }).L = L
+    await import('leaflet/dist/leaflet.css')
+    await import('leaflet.heat')
 
-  mapInstance = L.map(mapContainer.value, {
-    preferCanvas: true,
-    minZoom: 2,
-    maxZoom: 16,
-    worldCopyJump: true,
-    center: [initialLat, initialLng],
-    zoom: initialZoom,
-  })
+    if (!mapContainer.value || mapInstance) return
 
-  applyBasemap(settings.value.basemap)
+    const initialLat = filters.value.lat ?? 25
+    const initialLng = filters.value.lng ?? 10
+    const initialZoom = filters.value.lat !== undefined && filters.value.lng !== undefined ? 10 : 3
 
-  const initialHeatOpts = computeDynamicHeatOptions(initialZoom, settings.value)
-  heatLayer = L.heatLayer([], {
-    radius: initialHeatOpts.radius,
-    blur: initialHeatOpts.blur,
-    max: initialHeatOpts.max,
-    minOpacity: 0.35,
-    gradient: HEATMAP_GRADIENT,
-  }).addTo(mapInstance)
+    mapInstance = L.map(containerEl, {
+      preferCanvas: true,
+      minZoom: 2,
+      maxZoom: 16,
+      worldCopyJump: true,
+      center: [initialLat, initialLng],
+      zoom: initialZoom,
+    })
 
-  mapInstance.on('zoomend', () => {
-    applyHeatLayerOptions()
-    triggerHeatmapFetch(false)
-  })
-  mapInstance.on('moveend', () => {
-    triggerHeatmapFetch(false)
-  })
-  mapInstance.on('click', handleMapClick)
+    applyBasemap(settings.value.basemap)
 
-  window.addEventListener(HEATMAP_SETTINGS_UPDATED_EVENT, handleExternalSettingsEvent)
-  triggerHeatmapFetch(true)
+    const initialHeatOpts = computeDynamicHeatOptions(initialZoom, settings.value)
+    heatLayer = L.heatLayer([], {
+      radius: initialHeatOpts.radius,
+      blur: initialHeatOpts.blur,
+      max: initialHeatOpts.max,
+      minOpacity: 0.35,
+      gradient: HEATMAP_GRADIENT,
+    }).addTo(mapInstance)
+
+    mapInstance.on('zoomend', () => {
+      applyHeatLayerOptions()
+      triggerHeatmapFetch(false)
+    })
+    mapInstance.on('moveend', () => {
+      triggerHeatmapFetch(false)
+    })
+    mapInstance.on('click', handleMapClick)
+
+    window.addEventListener(HEATMAP_SETTINGS_UPDATED_EVENT, handleExternalSettingsEvent)
+    triggerHeatmapFetch(true)
+  } catch (error) {
+    heatmapError.value = error instanceof Error ? error.message : 'Failed to initialize map'
+  } finally {
+    mapInitializing = false
+  }
+}
+
+watch(
+  mapContainer,
+  (el) => {
+    if (el) {
+      void initializeMap(el)
+    }
+  },
+  { flush: 'post', immediate: true }
+)
+
+watch(isAuthenticated, (authed) => {
+  if (authed && mapInstance && heatLayer) {
+    triggerHeatmapFetch(true)
+  }
 })
 
 watch(
