@@ -1,24 +1,20 @@
 import { defineEventHandler, getQuery } from 'h3'
-import { useRuntimeConfig } from '#imports'
 import { getAlbums, toAlbumSummary } from '../../utils/albums-cache'
 import { getMediaDatabase } from '../../utils/file-database-cache'
+import { getRuntimeDatabaseNames, parsePaginationParams } from '../../utils/request-parsers'
 import { getRuntimeStorageOptions, requireBearerToken } from '../../utils/runtime-storage'
 
 export default defineEventHandler(async (event) => {
-  const cfg = useRuntimeConfig(event)
   const idToken = requireBearerToken(event)
   const storageOpts = getRuntimeStorageOptions(event)
+  const dbNames = getRuntimeDatabaseNames(event)
   const query = getQuery(event)
 
-  const parsedPage = parseInt(String(query.page || '1'), 10)
-  const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1
-  const parsedLimit = parseInt(String(query.limit || '20'), 10)
-  const limit = Math.min(Math.max(Number.isFinite(parsedLimit) ? parsedLimit : 20, 1), 100)
-  const skip = (page - 1) * limit
+  const { page, limit, skip } = parsePaginationParams(query, 20, 100)
 
   const [albums, snapshot] = await Promise.all([
-    getAlbums(idToken, { ...storageOpts, albumsFileName: cfg.database?.albumsJsonFileName }),
-    getMediaDatabase(idToken, { ...storageOpts, dbFileName: cfg.database?.jsonFileName }),
+    getAlbums(idToken, { ...storageOpts, albumsFileName: dbNames.albumsFileName }),
+    getMediaDatabase(idToken, { ...storageOpts, dbFileName: dbNames.dbFileName }),
   ])
 
   const totalCount = albums.length

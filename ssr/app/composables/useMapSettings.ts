@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { effectScope, ref, watch, type EffectScope } from 'vue'
 import { useAuthStore, type ThemeMode } from '../stores/auth'
 import type { BasemapStyle, HeatmapDataMode, WorldHeatmapSettings } from '../types'
 
@@ -150,8 +150,20 @@ export const writeMapSettingsToStorage = (settings: WorldHeatmapSettings): void 
 const sharedSettings = ref<WorldHeatmapSettings>({ ...DEFAULT_WORLD_HEATMAP_SETTINGS })
 let initialized = false
 let listenersBound = false
+let settingsScope: EffectScope | null = null
+let storageListener: ((event: StorageEvent) => void) | null = null
 
 export const resetSharedMapSettingsForTests = (): void => {
+  settingsScope?.stop()
+  settingsScope = null
+  if (
+    typeof window !== 'undefined' &&
+    typeof window.removeEventListener === 'function' &&
+    storageListener
+  ) {
+    window.removeEventListener('storage', storageListener)
+  }
+  storageListener = null
   initialized = false
   listenersBound = false
   sharedSettings.value = { ...DEFAULT_WORLD_HEATMAP_SETTINGS }
@@ -210,27 +222,32 @@ export const useMapSettings = () => {
     return loaded
   }
 
-  if (!listenersBound) {
+  // Only bind long-lived detached watchers in the browser so SSR never retains per-request Pinia stores
+  if (!listenersBound && typeof window !== 'undefined') {
     listenersBound = true
 
-    watch(
-      () => authStore.theme,
-      (nextTheme) => {
-        if (
-          (sharedSettings.value.basemap === 'dark' || sharedSettings.value.basemap === 'light') &&
-          sharedSettings.value.basemap !== nextTheme
-        ) {
-          saveMapSettings({ basemap: nextTheme }, { syncTheme: false })
+    settingsScope = effectScope(true)
+    settingsScope.run(() => {
+      watch(
+        () => authStore.theme,
+        (nextTheme) => {
+          if (
+            (sharedSettings.value.basemap === 'dark' || sharedSettings.value.basemap === 'light') &&
+            sharedSettings.value.basemap !== nextTheme
+          ) {
+            saveMapSettings({ basemap: nextTheme }, { syncTheme: false })
+          }
         }
-      }
-    )
+      )
+    })
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', (event: StorageEvent) => {
+    if (typeof window.addEventListener === 'function') {
+      storageListener = (event: StorageEvent) => {
         if (event.key === WORLD_HEATMAP_SETTINGS_KEY) {
           sharedSettings.value = readMapSettingsFromStorage(authStore.theme)
         }
-      })
+      }
+      window.addEventListener('storage', storageListener)
     }
   }
 

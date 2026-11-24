@@ -1,0 +1,111 @@
+{
+  "nodes": [
+    {
+      "id": "walls_of_dubrovnik_11_jpg",
+      "label": "Walls_of_Dubrovnik-11.jpg",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "id": "walls_of_dubrovnik",
+      "label": "Walls of Dubrovnik",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "id": "stone_fortress_tower",
+      "label": "Stone Fortress Tower",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "id": "adriatic_sea",
+      "label": "Adriatic Sea",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "id": "water_polo_court",
+      "label": "Water Polo Court",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "id": "concrete_pier_red_beacon",
+      "label": "Concrete Pier with Red Beacon",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "id": "rocky_shoreline_swimmers",
+      "label": "Rocky Shoreline and Swimmers",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "id": "dubrovnik_hillside_town",
+      "label": "Dubrovnik Hillside Town",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    }
+  ],
+  "edges": [
+    {
+      "source": "walls_of_dubrovnik_11_jpg",
+      "target": "walls_of_dubrovnik",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "source": "walls_of_dubrovnik",
+      "target": "stone_fortress_tower",
+      "relation": "includes",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "source": "walls_of_dubrovnik",
+      "target": "adriatic_sea",
+      "relation": "borders",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "source": "adriatic_sea",
+      "target": "water_polo_court",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "source": "concrete_pier_red_beacon",
+      "target": "adriatic_sea",
+      "relation": "extends_into",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "source": "rocky_shoreline_swimmers",
+      "target": "walls_of_dubrovnik",
+      "relation": "adjacent_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    },
+    {
+      "source": "dubrovnik_hillside_town",
+      "target": "adriatic_sea",
+      "relation": "overlooks",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-11.jpg"
+    }
+  ],
+  "hyperedges": []
+}

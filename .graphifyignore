@@ -1,0 +1,10 @@
+.agents
+.github/agents
+.idea
+.nuxt
+.output
+graphify-out
+node_modules
+!.jira
+!.plans
+!.security

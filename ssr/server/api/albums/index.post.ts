@@ -1,14 +1,14 @@
 import { createError, defineEventHandler, readBody } from 'h3'
-import { useRuntimeConfig } from '#imports'
 import { getEventLogger } from '../../services/logger.service'
 import { createAlbum } from '../../utils/albums-cache'
 import { getMediaDatabase } from '../../utils/file-database-cache'
+import { getRuntimeDatabaseNames } from '../../utils/request-parsers'
 import { getRuntimeStorageOptions, requireBearerToken } from '../../utils/runtime-storage'
 
 export default defineEventHandler(async (event) => {
-  const cfg = useRuntimeConfig(event)
   const idToken = requireBearerToken(event)
   const storageOpts = getRuntimeStorageOptions(event)
+  const dbNames = getRuntimeDatabaseNames(event)
   const body = (await readBody(event)) as { name?: unknown; hashes?: unknown } | null
 
   if (!body || typeof body !== 'object') {
@@ -21,13 +21,13 @@ export default defineEventHandler(async (event) => {
   const startedAt = Date.now()
   const snapshot = await getMediaDatabase(idToken, {
     ...storageOpts,
-    dbFileName: cfg.database?.jsonFileName,
+    dbFileName: dbNames.dbFileName,
   }).catch(() => null)
 
   const result = await createAlbum(
     { name: body.name, hashes: body.hashes },
     idToken,
-    { ...storageOpts, albumsFileName: cfg.database?.albumsJsonFileName },
+    { ...storageOpts, albumsFileName: dbNames.albumsFileName },
     snapshot
   )
 

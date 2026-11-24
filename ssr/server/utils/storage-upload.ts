@@ -17,12 +17,12 @@ export const buildFirebaseMediaUploadUrl = (
 ): string => {
   const emulatorHost =
     process.env.STORAGE_EMULATOR_HOST || process.env.FIREBASE_STORAGE_EMULATOR_HOST
-  const genQuery = ifGenerationMatch
-    ? `&ifGenerationMatch=${encodeURIComponent(ifGenerationMatch)}`
-    : ''
 
   if (emulatorHost) {
     const cleanHost = emulatorHost.replace(/\/+$/, '')
+    const genQuery = ifGenerationMatch
+      ? `&ifGenerationMatch=${encodeURIComponent(ifGenerationMatch)}`
+      : ''
     return `${cleanHost}/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?uploadType=media&name=${encodeURIComponent(objectName)}${genQuery}`
   }
 

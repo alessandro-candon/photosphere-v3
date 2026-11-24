@@ -1,22 +1,15 @@
-import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
-import { useRuntimeConfig } from '#imports'
+import { createError, defineEventHandler, readBody } from 'h3'
 import { getEventLogger } from '../../services/logger.service'
 import { updateAlbum } from '../../utils/albums-cache'
 import { getMediaDatabase } from '../../utils/file-database-cache'
+import { getRuntimeDatabaseNames, parseDecodedAlbumNameParam } from '../../utils/request-parsers'
 import { getRuntimeStorageOptions, requireBearerToken } from '../../utils/runtime-storage'
 
 export default defineEventHandler(async (event) => {
-  const rawName = getRouterParam(event, 'albumName') || ''
-  let decodedName: string
-  try {
-    decodedName = decodeURIComponent(rawName)
-  } catch {
-    throw createError({ statusCode: 400, statusMessage: 'Malformed albumName parameter' })
-  }
-
-  const cfg = useRuntimeConfig(event)
+  const decodedName = parseDecodedAlbumNameParam(event)
   const idToken = requireBearerToken(event)
   const storageOpts = getRuntimeStorageOptions(event)
+  const dbNames = getRuntimeDatabaseNames(event)
   const body = (await readBody(event)) as {
     newName?: unknown
     addHashes?: unknown
@@ -33,7 +26,7 @@ export default defineEventHandler(async (event) => {
   const startedAt = Date.now()
   const snapshot = await getMediaDatabase(idToken, {
     ...storageOpts,
-    dbFileName: cfg.database?.jsonFileName,
+    dbFileName: dbNames.dbFileName,
   }).catch(() => null)
 
   const result = await updateAlbum(
@@ -44,7 +37,7 @@ export default defineEventHandler(async (event) => {
       removeHashes: body.removeHashes,
     },
     idToken,
-    { ...storageOpts, albumsFileName: cfg.database?.albumsJsonFileName },
+    { ...storageOpts, albumsFileName: dbNames.albumsFileName },
     snapshot
   )
 

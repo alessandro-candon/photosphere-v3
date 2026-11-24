@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { mkdirSync, renameSync, writeFileSync } from 'node:fs'
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { createError } from 'h3'
@@ -76,11 +77,45 @@ export const ensureMountedVolumeDir = (subDir?: string, volumePathOverride?: str
   return target
 }
 
+export const ensureMountedVolumeDirAsync = async (
+  subDir?: string,
+  volumePathOverride?: string
+): Promise<string> => {
+  const base =
+    volumePathOverride || process.env.PHOTOSPHERE_MOUNTED_VOLUME_PATH || getDefaultCacheDir()
+  const target = subDir ? resolve(base, subDir) : resolve(base)
+  await mkdir(target, { recursive: true })
+  return target
+}
+
 export const writeFileAtomic = (targetPath: string, data: string | Uint8Array): void => {
   mkdirSync(dirname(targetPath), { recursive: true })
   const tmpPath = `${targetPath}.${randomUUID()}.tmp`
   writeFileSync(tmpPath, data)
   renameSync(tmpPath, targetPath)
+}
+
+export const writeFileAtomicAsync = async (
+  targetPath: string,
+  data: string | Uint8Array,
+  mode?: number
+): Promise<void> => {
+  await mkdir(dirname(targetPath), { recursive: true })
+  const tmpPath = `${targetPath}.${randomUUID()}.tmp`
+  await writeFile(tmpPath, data, mode !== undefined ? { mode } : undefined)
+  await rename(tmpPath, targetPath)
+}
+
+const readGenerationSidecar = async (metaPath: string): Promise<string | null> => {
+  try {
+    const raw = await readFile(metaPath, 'utf-8')
+    const parsed = JSON.parse(raw) as { generation?: unknown }
+    return typeof parsed?.generation === 'string' && parsed.generation.length > 0
+      ? parsed.generation
+      : null
+  } catch {
+    return null
+  }
 }
 
 export const downloadDataFileWithMetadata = async (
@@ -187,23 +222,35 @@ export const loadJsonDatabaseWithMetadata = async <T>(
   options?: StorageOptions
 ): Promise<DownloadedJsonResult<T>> => {
   const cfg = getStorageConfig(options)
-  const dir = ensureMountedVolumeDir(undefined, cfg.mountedVolumePath)
+  const dir = await ensureMountedVolumeDirAsync(undefined, cfg.mountedVolumePath)
   const localPath = resolve(dir, localFileName)
+  const metaPath = `${localPath}.meta.json`
 
-  if (!options?.forceRefresh && existsSync(localPath)) {
-    const rawDisk = readFileSync(localPath, 'utf-8')
-    let parsedDisk: unknown
+  if (!options?.forceRefresh) {
+    let rawDisk: string | null = null
     try {
-      parsedDisk = JSON.parse(rawDisk)
-    } catch {
-      throw createError({
-        statusCode: 500,
-        statusMessage: `Corrupted JSON in cached database file ${localFileName}`,
-      })
+      rawDisk = await readFile(localPath, 'utf-8')
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw error
+      }
     }
-    return {
-      data: validator(parsedDisk),
-      generation: null,
+
+    if (rawDisk !== null) {
+      let parsedDisk: unknown
+      try {
+        parsedDisk = JSON.parse(rawDisk)
+      } catch {
+        throw createError({
+          statusCode: 500,
+          statusMessage: `Corrupted JSON in cached database file ${localFileName}`,
+        })
+      }
+      const generation = await readGenerationSidecar(metaPath)
+      return {
+        data: validator(parsedDisk),
+        generation,
+      }
     }
   }
 
@@ -219,7 +266,8 @@ export const loadJsonDatabaseWithMetadata = async <T>(
   }
 
   const validated = validator(parsedRemote)
-  writeFileAtomic(localPath, JSON.stringify(parsedRemote))
+  await writeFileAtomicAsync(localPath, JSON.stringify(parsedRemote))
+  await writeFileAtomicAsync(metaPath, JSON.stringify({ generation: remote.generation }))
   return {
     data: validated,
     generation: remote.generation,

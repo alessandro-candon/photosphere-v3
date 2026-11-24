@@ -6,7 +6,10 @@ import { resolve } from 'node:path'
 import { createEvent, type H3Event } from 'h3'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import mediaHandler from '../../server/api/media/[hash].get'
-import { resetMediaLruCacheForTests } from '../../server/services/media-cache.service'
+import {
+  parseByteRange,
+  resetMediaLruCacheForTests,
+} from '../../server/services/media-cache.service'
 import { invalidateFileDatabaseCache } from '../../server/utils/file-database-cache'
 import { setMockRuntimeConfig } from '../nuxt-imports-stub'
 
@@ -314,5 +317,60 @@ describe('GET /api/media/[hash] Proxy & Bounded LRU Cache', () => {
 
     // Sanity check disk file exists for h2
     expect(readFileSync(resolve(vol, 'media', `${h2}.thumbnail.bin`)).byteLength).toBe(4)
+  })
+
+  it('rejects 0-byte suffix ranges with 416 and recovers cleanly from ENOENT on evicted cache files', async () => {
+    expect(parseByteRange('bytes=-10', 0)).toBeNull()
+    expect(parseByteRange('bytes=0-0', 0)).toBeNull()
+
+    const vol = mkdtempSync(resolve(tmpdir(), 'ps-media-enoent-'))
+    tempDirs.push(vol)
+    setMockRuntimeConfig({
+      storage: { dataBucket: 'data-bkt', mediaBucket: 'media-bkt', mountedVolumePath: vol },
+      mediaCache: { directoryName: 'media', maxCacheBytes: 1024, maxCacheableVideoBytes: 1024 },
+    })
+
+    const dbPayload = {
+      [HASH_IMAGE]: {
+        hash: HASH_IMAGE,
+        average_hash: null,
+        source_bucket_uri: 'gs://media-bkt/photo.jpg',
+        thumbnail_bucket_uri: 'gs://media-bkt/thumbs/photo.jpg',
+        file_type: 'IMAGE',
+        created_at: null,
+        created_at_timestamp: 1000,
+        latitude: null,
+        longitude: null,
+        geohash: null,
+        label_indexes: [],
+        caption_index: null,
+      },
+    }
+
+    let mediaFetchCount = 0
+    globalThis.fetch = vi.fn(async (url: string | URL | Request) => {
+      if (String(url).includes('photosphere_database_cloud.json')) {
+        return new Response(JSON.stringify(dbPayload), { status: 200 })
+      }
+      mediaFetchCount += 1
+      return new Response(new Uint8Array([7, 8, 9]), {
+        status: 200,
+        headers: { 'content-type': 'image/jpeg' },
+      })
+    }) as unknown as typeof fetch
+
+    await mediaHandler(makeMediaEvent(HASH_IMAGE, 'variant=thumbnail'))
+    expect(mediaFetchCount).toBe(1)
+
+    // Unsatisfiable range on cached file -> 416
+    await expect(
+      mediaHandler(makeMediaEvent(HASH_IMAGE, 'variant=thumbnail', { range: 'bytes=99-120' }))
+    ).rejects.toMatchObject({ statusCode: 416 })
+
+    // Simulate external file deletion -> ENOENT falls back to upstream fetch
+    rmSync(resolve(vol, 'media', `${HASH_IMAGE}.thumbnail.bin`), { force: true })
+    const recovered = await mediaHandler(makeMediaEvent(HASH_IMAGE, 'variant=thumbnail'))
+    expect(mediaFetchCount).toBe(2)
+    expect(Array.from(recovered as Uint8Array)).toEqual([7, 8, 9])
   })
 })

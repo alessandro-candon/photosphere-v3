@@ -106,7 +106,7 @@
               {{ item.fileName }}
             </button>
             <p class="truncate text-[11px] text-muted-foreground">
-              {{ formatDate(item.createdAt) }}
+              {{ formatCompactDate(item.createdAt) }}
             </p>
             <div class="flex flex-wrap items-center gap-1">
               <Badge
@@ -156,6 +156,7 @@
 
 <script setup lang="ts">
 import { FileText, Film, MapPin, MapPinOff, X } from 'lucide-vue-next'
+import { formatCompactDate } from '#shared/date'
 import ErrorBanner from '../common/ErrorBanner.vue'
 import Badge from '../ui/Badge.vue'
 import Button from '../ui/Button.vue'
@@ -188,11 +189,4 @@ const formatRadius = (km: number): string =>
 
 const formatDistance = (km: number): string =>
   km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(2)} km`
-
-const formatDate = (iso: string | null): string => {
-  if (!iso) return 'Unknown date'
-  const parsed = new Date(iso)
-  if (Number.isNaN(parsed.getTime())) return iso
-  return parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-}
 </script>

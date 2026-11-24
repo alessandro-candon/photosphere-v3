@@ -1,0 +1,1997 @@
+{
+  "nodes": [
+    {
+      "id": "readme_photosphere",
+      "label": "Photosphere",
+      "file_type": "document",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/README.md",
+      "source_location": "L1-L8",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_photosphere_cli",
+      "label": "Photosphere CLI",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/README.md",
+      "source_location": "L7",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_photosphere_web_app",
+      "label": "Photosphere Web App",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/README.md",
+      "source_location": "L8",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "cli_readme_package",
+      "label": "cli Python Package",
+      "file_type": "document",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/cli/README.md",
+      "source_location": "L1-L3",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "contracts_readme_schemas",
+      "label": "Canonical JSON Schema Contracts",
+      "file_type": "document",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/contracts/README.md",
+      "source_location": "L1-L12",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docker_compose_services",
+      "label": "Docker Compose Services (fake-gcs-server, init, cli, ssr)",
+      "file_type": "document",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docker-compose.yml",
+      "source_location": "L1-L70",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_ai_tagging_and_captioning_moondream2",
+      "label": "AI Tagging and Captioning (Moondream2)",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/ai-tagging-and-captioning.md",
+      "source_location": "L1-L18",
+      "source_url": null,
+      "captured_at": null,
+      "author": "alessandro-candon",
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_ai_tagging_and_captioning_backfill",
+      "label": "Photosphere Annotate Backfill",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/ai-tagging-and-captioning.md",
+      "source_location": "L33-L35",
+      "source_url": null,
+      "captured_at": null,
+      "author": "alessandro-candon",
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_cli_refactor_followups_hardening",
+      "label": "CLI Refactor Follow-ups (Post-Review Hardening)",
+      "file_type": "rationale",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/cli-refactor-followups.md",
+      "source_location": "L1-L30",
+      "source_url": null,
+      "captured_at": null,
+      "author": "alessandro-candon",
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_cli_refactoring_and_mirrored_tests_plan",
+      "label": "CLI Clean-Code Refactoring & Mirrored Test Suite",
+      "file_type": "rationale",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/cli-refactoring-and-mirrored-tests.md",
+      "source_location": "L1-L11",
+      "source_url": null,
+      "captured_at": null,
+      "author": "alessandro-candon",
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_cli_routing_mode_and_periodic_commits_design",
+      "label": "CLI-Only --routing-mode, Dry-Run & Periodic GCS Commits",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/cli-routing-mode-and-periodic-commits.md",
+      "source_location": "L1-L12",
+      "source_url": null,
+      "captured_at": null,
+      "author": "alessandro-candon",
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_frontend_design_system_architecture",
+      "label": "Frontend Design System & Organism Component Architecture",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/frontend-design-system.md",
+      "source_location": "L1-L15",
+      "source_url": null,
+      "captured_at": null,
+      "author": "alessandro-candon",
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_host_native_cli_packaging_design",
+      "label": "Host-Native CLI Packaging (uv & PyAV)",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/host-native-cli-packaging.md",
+      "source_location": "L1-L21",
+      "source_url": null,
+      "captured_at": null,
+      "author": "alessandro-candon",
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_ingest_latency_reduction_design",
+      "label": "Local Ingest Latency Reduction (MPS & Single-Pass Decode)",
+      "file_type": "rationale",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/ingest-latency-reduction.md",
+      "source_location": "L1-L27",
+      "source_url": null,
+      "captured_at": null,
+      "author": "alessandro-candon",
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_photosphere_gcp_bootstrap_doc",
+      "label": "Portable GCP/Firebase Bootstrap Design",
+      "file_type": "document",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-gcp-bootstrap.md",
+      "source_location": "L1-L5",
+      "source_url": null,
+      "captured_at": null,
+      "author": "alessandro-candon",
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_photosphere_gcp_bootstrap_scripts_init",
+      "label": "scripts/init/ Bootstrap Package",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-gcp-bootstrap.md",
+      "source_location": "L11-L13",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Uses google.auth AuthorizedSession REST API calls instead of wrapping gcloud, firebase-tools, or terraform binaries so it runs inside the existing cli Python environment without external CLI dependencies or mutating tracked infra/ files."
+    },
+    {
+      "id": "docs_designs_photosphere_gcp_bootstrap_photosphere_config_json",
+      "label": "photosphere.config.json Unified Config",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-gcp-bootstrap.md",
+      "source_location": "L106-L145",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Consolidates runtime configuration across cli/, ssr/, Makefile, and docker-compose.yml into a single git-ignored JSON file validated against contracts/photosphere_config.schema.json, preventing drift across separate .env files."
+    },
+    {
+      "id": "docs_designs_photosphere_gcp_bootstrap_google_rest_client",
+      "label": "GoogleRestClient",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-gcp-bootstrap.md",
+      "source_location": "L265-L271",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_photosphere_gcp_bootstrap_bootstrap_provisioner",
+      "label": "BootstrapProvisioner",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-gcp-bootstrap.md",
+      "source_location": "L273-L284",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_photosphere_v3_scaffolding_doc",
+      "label": "Photosphere v3 Monorepo Scaffolding Design",
+      "file_type": "document",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-v3-scaffolding.md",
+      "source_location": "L1-L5",
+      "source_url": null,
+      "captured_at": null,
+      "author": "alessandro-candon",
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_photosphere_v3_scaffolding_dual_bucket_architecture",
+      "label": "Dual-Bucket GCS Architecture",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-v3-scaffolding.md",
+      "source_location": "L13-L27",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Splits frequently updated JSON databases into a Standard-class GCS bucket (PHOTOSPHERE_DATA_BUCKET) while keeping original media and thumbnails/ in the Archive-class GCS bucket (PHOTOSPHERE_MEDIA_BUCKET) to avoid Archive retrieval fees and 365-day early-deletion charges."
+    },
+    {
+      "id": "docs_designs_photosphere_v3_scaffolding_flat_sha1_json_db",
+      "label": "Flat SHA-1 Keyed JSON Database",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-v3-scaffolding.md",
+      "source_location": "L130-L157",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Replaces TinyDB _default wrapper and eliminates Protobuf (.pb) artifacts; SHA-1 hash is the primary key for deduplication while average_hash >= 90% reuses AI labels/captions without discarding distinct photos."
+    },
+    {
+      "id": "docs_designs_photosphere_v3_scaffolding_ai_provider_protocol",
+      "label": "AIProvider Protocol",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-v3-scaffolding.md",
+      "source_location": "L172-L175",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Decouples vision AI labeling/captioning behind a Protocol and optional [ai] extras so core CLI operations and tests run without multi-GB ML packages."
+    },
+    {
+      "id": "docs_designs_photosphere_v3_scaffolding_migrate_v2_to_v3",
+      "label": "scripts/migrate_v2_to_v3.py",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-v3-scaffolding.md",
+      "source_location": "L195-L202",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Isolated disposable migration script so cli/ and ssr/ carry zero legacy TinyDB backward-compatibility code after cutover."
+    },
+    {
+      "id": "docs_designs_recreation_roadmap_doc",
+      "label": "SSR Webapp Recreation Roadmap",
+      "file_type": "document",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/recreation-roadmap.md",
+      "source_location": "L1-L5",
+      "source_url": null,
+      "captured_at": null,
+      "author": "alessandro-candon",
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_recreation_roadmap_dual_auth_boundary",
+      "label": "Dual Authentication Boundary (__ps_media + Bearer)",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/recreation-roadmap.md",
+      "source_location": "L117-L119",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "JSON and mutation APIs require Authorization: Bearer Firebase ID tokens (preventing CSRF), while GET /api/media/[hash] uses an HttpOnly __ps_media session cookie so native <img> and <video> tags leverage browser HTTP caching and Range 206 streaming."
+    },
+    {
+      "id": "docs_designs_recreation_roadmap_writable_albums_mutex",
+      "label": "Writable Albums with Mutex & ifGenerationMatch",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/recreation-roadmap.md",
+      "source_location": "L126-L126",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_recreation_roadmap_server_side_indexes",
+      "label": "Server-Side In-Memory Indexes",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/recreation-roadmap.md",
+      "source_location": "L121-L125",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_world_map_heatmap_doc",
+      "label": "World Map Heatmap & Spatial Inspector Design",
+      "file_type": "document",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/world-map-heatmap.md",
+      "source_location": "L1-L5",
+      "source_url": null,
+      "captured_at": null,
+      "author": "alessandro-candon",
+      "contributor": null
+    },
+    {
+      "id": "docs_designs_world_map_heatmap_get_api_map_heatmap",
+      "label": "GET /api/map/heatmap",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/world-map-heatmap.md",
+      "source_location": "L154-L173",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Uses two-tier in-memory geohash aggregation (O(B) precomputed buckets when unfiltered, O(M) filtered pass) with a 5,000-point raw mode fallback instead of an embedded SQLite database to achieve <20ms latency without duplicating 100k+ records."
+    },
+    {
+      "id": "docs_designs_world_map_heatmap_map_inspect_drawer",
+      "label": "MapInspectDrawer & Click-to-Inspect",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/world-map-heatmap.md",
+      "source_location": "L215-L228",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Uses Haversine distance sorting via GET /api/files?sort=distance instead of geohash prefix matching to guarantee circular coverage without cell-boundary seams."
+    },
+    {
+      "id": "docs_designs_world_map_heatmap_use_map_settings",
+      "label": "useMapSettings & Theme Sync",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/world-map-heatmap.md",
+      "source_location": "L229-L249",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_originals_2026_11_15_drift_report_doc",
+      "label": "2026-11-15 Drift Report",
+      "file_type": "document",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/originals/2026-11-15_DRIFT_REPORT.md",
+      "source_location": "L1-L7",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "docs_originals_initial_spec_doc",
+      "label": "Initial Functional & Architectural Spec",
+      "file_type": "document",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/originals/INITIAL_SPEC.MD",
+      "source_location": "L1-L7",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "infra_readme_doc",
+      "label": "infra/ Package Documentation",
+      "file_type": "document",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/infra/README.md",
+      "source_location": "L1-L30",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "ssr_readme_doc",
+      "label": "ssr/ Package Documentation",
+      "file_type": "document",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/ssr/README.md",
+      "source_location": "L1-L34",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "ssr_docker_compose_service",
+      "label": "photosphere-ssr Docker Compose Service",
+      "file_type": "code",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/ssr/docker-compose.yml",
+      "source_location": "L1-L17",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "ssr_pnpm_workspace_allow_builds",
+      "label": "pnpm-workspace.yaml allowBuilds",
+      "file_type": "code",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/ssr/pnpm-workspace.yaml",
+      "source_location": "L1-L4",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gif_photosphere_v3_logo",
+      "label": "Photosphere V3 App Icon / Logo (gif.gif)",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/assets/gif.gif",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gif_camera_lens_sphere_motif",
+      "label": "Camera Lens / Sphere Motif",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/assets/gif.gif",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "gif_v3_badge",
+      "label": "V3 Version Badge",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/assets/gif.gif",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "photosphere_v3_icon",
+      "label": "Photosphere V3 App Icon",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/assets/icon.jpeg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "photosphere_v3_brand",
+      "label": "Photosphere V3",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/assets/icon.jpeg",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "photosphere_v3_icon_svg",
+      "label": "photosphere_v3_icon.svg",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/assets/photosphere_v3_icon.svg",
+      "summary": "SVG application icon for Photosphere V3 featuring a rounded squircle navy background, a split coral-orange and teal globe with aperture blades, a central camera lens assembly, and a bottom-right 'V3' badge."
+    },
+    {
+      "id": "photosphere_v3_brand_icon",
+      "label": "Photosphere V3 App Icon",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/assets/photosphere_v3_icon.svg",
+      "summary": "Visual identity asset combining globe/latitude-longitude motifs with a camera lens and aperture blades, plus a 'V3' version badge."
+    },
+    {
+      "id": "afrovenator_abakensis_dinosaur_png",
+      "label": "Afrovenator_abakensis_dinosaur.png",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Afrovenator_abakensis_dinosaur.png"
+    },
+    {
+      "id": "afrovenator_abakensis",
+      "label": "Afrovenator abakensis",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Afrovenator_abakensis_dinosaur.png"
+    },
+    {
+      "id": "theropod_dinosaur",
+      "label": "Theropod Dinosaur",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Afrovenator_abakensis_dinosaur.png"
+    },
+    {
+      "id": "dinosaur_illustration",
+      "label": "Paleoart Illustration",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Afrovenator_abakensis_dinosaur.png"
+    },
+    {
+      "id": "agate_de_l_esterel_img",
+      "label": "Agate de l'Esterel Specimen",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Agate_de_l'Esterel.jpg",
+      "description": "Cut and polished mineral specimen of Agate de l'Esterel (Estérel agate / rhyolitic lithophysa) isolated on a black background, showing concentric and fibrous banding in tan, brown, reddish-orange, dark gray, and translucent chalcedony."
+    },
+    {
+      "id": "esterel_agate_mineral",
+      "label": "Agate de l'Esterel",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Agate_de_l'Esterel.jpg",
+      "description": "Silica/chalcedony agate nodule (lithophysa) from the Estérel massif, characterized by concentric banded chalcedony, fibrous tan/brown zones, and reddish-orange iron-oxide-rich bands."
+    },
+    {
+      "id": "chalcedony_banding",
+      "label": "Translucent Chalcedony Banding",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Agate_de_l'Esterel.jpg",
+      "description": "Grayish-white translucent chalcedony infill visible in the lower cavity of the specimen."
+    },
+    {
+      "id": "iron_oxide_inclusions",
+      "label": "Reddish-Orange Banding",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Agate_de_l'Esterel.jpg",
+      "description": "Bright reddish-orange concentric bands and linings within the central and upper cavities of the agate."
+    },
+    {
+      "id": "black_background_studio",
+      "label": "Black Background",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Agate_de_l'Esterel.jpg",
+      "description": "Uniform pure black background isolating the mineral specimen."
+    },
+    {
+      "id": "charioteer_of_delphi_image",
+      "label": "Aurige._Musée_Delphes._Grèce.png",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Aurige._Musée_Delphes._Grèce.png",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "charioteer_of_delphi_sculpture",
+      "label": "Charioteer of Delphi (Aurige de Delphes)",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Aurige._Musée_Delphes._Grèce.png",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95
+    },
+    {
+      "id": "delphi_archaeological_museum",
+      "label": "Delphi Archaeological Museum, Greece",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Aurige._Musée_Delphes._Grèce.png",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95
+    },
+    {
+      "id": "bronze_sculpture_medium",
+      "label": "Ancient Greek Bronze Sculpture",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Aurige._Musée_Delphes._Grèce.png",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "bronze_reins",
+      "label": "Bronze Reins",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Aurige._Musée_Delphes._Grèce.png",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "pleated_tunic_chiton",
+      "label": "Long Pleated Tunic (Xystis)",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Aurige._Musée_Delphes._Grèce.png",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "avaceratops_dinosaur_png",
+      "label": "Avaceratops_dinosaur.png",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Avaceratops_dinosaur.png"
+    },
+    {
+      "id": "avaceratops",
+      "label": "Avaceratops",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Avaceratops_dinosaur.png"
+    },
+    {
+      "id": "ceratopsian_dinosaur",
+      "label": "Ceratopsian Dinosaur",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Avaceratops_dinosaur.png"
+    },
+    {
+      "id": "beak_and_brow_horns",
+      "label": "Beak and Brow Horns",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Avaceratops_dinosaur.png"
+    },
+    {
+      "id": "solid_neck_frill",
+      "label": "Solid Neck Frill",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Avaceratops_dinosaur.png"
+    },
+    {
+      "id": "spotted_green_and_ochre_skin",
+      "label": "Spotted Green and Ochre Skin",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Avaceratops_dinosaur.png"
+    },
+    {
+      "id": "baska_voda_mountain_image",
+      "label": "Baska Voda Mountain Image",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Baska_Voda-mountain.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "description": "Landscape photograph of a rocky limestone mountain peak (Biokovo range near Baška Voda) under a clear blue sky, with pine trees in the foreground and cleared/terracotta-colored terrain at the base."
+    },
+    {
+      "id": "baska_voda_mountain_peak",
+      "label": "Rocky Limestone Mountain Peak",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Baska_Voda-mountain.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "description": "Rugged, light-gray limestone mountain range with a prominent central peak."
+    },
+    {
+      "id": "pine_forest_foreground",
+      "label": "Pine Forest Foreground",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Baska_Voda-mountain.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "description": "Dense green pine trees in the foreground and lower slopes."
+    },
+    {
+      "id": "clear_blue_sky",
+      "label": "Clear Blue Sky",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Baska_Voda-mountain.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "description": "Cloudless blue sky above the mountain ridge."
+    },
+    {
+      "id": "baska_voda_croatia",
+      "label": "Baška Voda, Croatia",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Baska_Voda-mountain.jpg",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "description": "Coastal town in Dalmatia, Croatia, located at the foot of the Biokovo mountain range, inferred from filename."
+    },
+    {
+      "id": "hurricane_r4118_arp_jpg",
+      "label": "Hurricane.r4118.arp.jpg",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Hurricane.r4118.arp.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "hawker_hurricane_r4118",
+      "label": "Hawker Hurricane R4118",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Hurricane.r4118.arp.jpg",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95
+    },
+    {
+      "id": "raf_roundel",
+      "label": "RAF Roundel",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Hurricane.r4118.arp.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "raf_fin_flash",
+      "label": "RAF Fin Flash",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Hurricane.r4118.arp.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "fuselage_code_up_w",
+      "label": "Fuselage Code UP-W",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Hurricane.r4118.arp.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "three_blade_propeller",
+      "label": "Three-Blade Propeller",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Hurricane.r4118.arp.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "ventral_radiator",
+      "label": "Ventral Radiator",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Hurricane.r4118.arp.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "tailwheel",
+      "label": "Fixed Tailwheel",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Hurricane.r4118.arp.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "japanese_squirrel_jpg",
+      "label": "Japanese_Squirrel.jpg",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Japanese_Squirrel.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "japanese_squirrel",
+      "label": "Japanese Squirrel (Sciurus lis)",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Japanese_Squirrel.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "mossy_tree_branch",
+      "label": "Moss-covered Tree Branch",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Japanese_Squirrel.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "autumn_leaves",
+      "label": "Fallen Autumn Maple Leaves",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Japanese_Squirrel.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "forest_floor_habitat",
+      "label": "Autumn Forest Floor",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Japanese_Squirrel.jpg",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95
+    },
+    {
+      "id": "m_nonius_balbus_equestrian_statue",
+      "label": "M. Nonius Balbus Equestrian Statue",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/M.Nonius_Balbus_Nuceria_equestrian_Statue_MANN.png",
+      "description": "Cutout photograph of a Roman marble equestrian statue of Marcus Nonius Balbus on a black background, supported by a central cylindrical plinth."
+    },
+    {
+      "id": "marcus_nonius_balbus",
+      "label": "Marcus Nonius Balbus",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/M.Nonius_Balbus_Nuceria_equestrian_Statue_MANN.png",
+      "description": "Roman figure depicted seated on horseback, right arm raised in an oratorical/saluting gesture, left hand holding reins."
+    },
+    {
+      "id": "equestrian_horse",
+      "label": "Marble Horse",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/M.Nonius_Balbus_Nuceria_equestrian_Statue_MANN.png",
+      "description": "Marble horse with raised front right/left leg, sculpted mane, bridle, reins, and rear tail strut."
+    },
+    {
+      "id": "mann_museum",
+      "label": "MANN (Museo Archeologico Nazionale di Napoli)",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/M.Nonius_Balbus_Nuceria_equestrian_Statue_MANN.png",
+      "description": "Museum collection referenced by MANN in the image filename."
+    },
+    {
+      "id": "nipponosaurus_dinosaur_png",
+      "label": "Nipponosaurus_dinosaur.png",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Nipponosaurus_dinosaur.png",
+      "node_type": "image",
+      "confidence": 1.0
+    },
+    {
+      "id": "nipponosaurus",
+      "label": "Nipponosaurus",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Nipponosaurus_dinosaur.png",
+      "node_type": "organism",
+      "confidence": 1.0
+    },
+    {
+      "id": "hadrosaurid_dinosaur",
+      "label": "Hadrosaurid Dinosaur",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Nipponosaurus_dinosaur.png",
+      "node_type": "concept",
+      "confidence": 0.95
+    },
+    {
+      "id": "yellow_brown_striped_coloration",
+      "label": "Yellow-Brown Striped Coloration",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Nipponosaurus_dinosaur.png",
+      "node_type": "visual_feature",
+      "confidence": 1.0
+    },
+    {
+      "id": "project_775m_azov_2008_g1_jpg",
+      "label": "Project_775M_AZOV_2008_G1.jpg",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg",
+      "node_type": "image",
+      "description": "Photograph of Russian Navy Project 775M landing ship Azov (hull number 151) underway in coastal waters in 2008."
+    },
+    {
+      "id": "bdks_azov_151",
+      "label": "Azov (151)",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg",
+      "node_type": "vessel",
+      "description": "Large landing ship Azov (АЗОВ), hull number 151, Project 775M (Ropucha-II class)."
+    },
+    {
+      "id": "project_775m_class",
+      "label": "Project 775M",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg",
+      "node_type": "ship_class",
+      "description": "Project 775M (Ropucha-II class) large landing ship design."
+    },
+    {
+      "id": "hull_number_151",
+      "label": "Hull Number 151",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg",
+      "node_type": "identifier",
+      "description": "White hull number 151 painted on the starboard bow."
+    },
+    {
+      "id": "russian_navy_ensign",
+      "label": "Russian Navy Ensign",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg",
+      "node_type": "symbol",
+      "description": "St. Andrew's cross naval ensign flying from the mainmast."
+    },
+    {
+      "id": "forward_gun_turret",
+      "label": "Forward Gun Turret",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg",
+      "node_type": "equipment",
+      "description": "Single-barrel naval gun turret mounted on the forward deck."
+    },
+    {
+      "id": "mast_radome",
+      "label": "Mast Radome",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg",
+      "node_type": "equipment",
+      "description": "White spherical radome mounted atop the lattice mainmast."
+    },
+    {
+      "id": "coastal_cityscape",
+      "label": "Coastal Cityscape",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg",
+      "node_type": "location",
+      "description": "Multi-story residential buildings, trees, and shoreline visible in the background."
+    },
+    {
+      "id": "red_knobbed_starfish_image",
+      "label": "Red-knobbed.starfish.arp.jpg",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Red-knobbed.starfish.arp.jpg"
+    },
+    {
+      "id": "red_knobbed_starfish",
+      "label": "Red-knobbed Starfish (Protoreaster linckii)",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Red-knobbed.starfish.arp.jpg"
+    },
+    {
+      "id": "marine_aquarium_habitat",
+      "label": "Marine Aquarium Habitat",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Red-knobbed.starfish.arp.jpg"
+    },
+    {
+      "id": "live_rock_substrate",
+      "label": "Live Rock and Coral Substrate",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Red-knobbed.starfish.arp.jpg"
+    },
+    {
+      "id": "sandy_seabed_substrate",
+      "label": "Sandy Substrate",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Red-knobbed.starfish.arp.jpg"
+    },
+    {
+      "id": "russet_potato_cultivar_image",
+      "label": "Russet Potato Cultivar With Sprouts Image",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Russet_potato_cultivar_with_sprouts.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "description": "Studio photograph on a white background showing a whole sprouted Russet potato tuber on the right and a cut half of a Russet potato on the left."
+    },
+    {
+      "id": "russet_potato_cultivar",
+      "label": "Russet Potato Cultivar",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Russet_potato_cultivar_with_sprouts.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "description": "Potato cultivar characterized by rough light-brown russeted skin and pale cream-white flesh."
+    },
+    {
+      "id": "potato_sprouts",
+      "label": "Potato Sprouts",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Russet_potato_cultivar_with_sprouts.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "description": "Vegetative shoots emerging from the eyes of the potato tubers."
+    },
+    {
+      "id": "cut_potato_cross_section",
+      "label": "Cut Potato Cross Section",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Russet_potato_cultivar_with_sprouts.jpg",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "description": "Halved Russet potato tuber exposing the pale cream-white interior flesh."
+    },
+    {
+      "id": "sand_lizard_2008_g1_jpg",
+      "label": "Sand_Lizard_2008_G1.jpg",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Sand_Lizard_2008_G1.jpg"
+    },
+    {
+      "id": "sand_lizard",
+      "label": "Sand Lizard (Lacerta agilis)",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Sand_Lizard_2008_G1.jpg"
+    },
+    {
+      "id": "moss_covered_log",
+      "label": "Moss-covered Log",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Sand_Lizard_2008_G1.jpg"
+    },
+    {
+      "id": "dorsal_spotted_scales",
+      "label": "Dorsal Spotted Scales",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Sand_Lizard_2008_G1.jpg"
+    },
+    {
+      "id": "dry_leaves_and_twigs",
+      "label": "Dry Leaves and Twigs",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Sand_Lizard_2008_G1.jpg"
+    },
+    {
+      "id": "the_tempest_rodin_s01092",
+      "label": "The Tempest (Rodin S.01092)",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/The_tempest_Rodin_S.01092_Musee_Rodin_Paris.png",
+      "description": "White marble sculpture 'The Tempest' by Auguste Rodin (Musée Rodin, Paris, S.01092), depicting an expressive, open-mouthed face emerging from a rough-hewn block of marble.",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "auguste_rodin",
+      "label": "Auguste Rodin",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/The_tempest_Rodin_S.01092_Musee_Rodin_Paris.png",
+      "description": "French sculptor who created The Tempest (S.01092).",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95
+    },
+    {
+      "id": "musee_rodin_paris",
+      "label": "Musée Rodin, Paris",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/The_tempest_Rodin_S.01092_Musee_Rodin_Paris.png",
+      "description": "Museum in Paris housing the sculpture The Tempest (S.01092).",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95
+    },
+    {
+      "id": "white_marble",
+      "label": "White Marble",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/The_tempest_Rodin_S.01092_Musee_Rodin_Paris.png",
+      "description": "Medium of the sculpture, featuring both smooth carved facial features and rough-hewn uncarved stone.",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "expressive_face_tempest",
+      "label": "Expressive Open-Mouthed Face",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/The_tempest_Rodin_S.01092_Musee_Rodin_Paris.png",
+      "description": "Dramatic facial expression with furrowed brow and open mouth, emerging from swirling stone.",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "id": "victor_hugo_buste_marbre_musee_rodin_s00464_paris_png",
+      "label": "Victor_Hugo_buste_marbre_Musée_Rodin_S.00464_Paris.png",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Victor_Hugo_buste_marbre_Musée_Rodin_S.00464_Paris.png"
+    },
+    {
+      "id": "victor_hugo_marble_bust",
+      "label": "Marble Bust of Victor Hugo (S.00464)",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Victor_Hugo_buste_marbre_Musée_Rodin_S.00464_Paris.png"
+    },
+    {
+      "id": "victor_hugo",
+      "label": "Victor Hugo",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Victor_Hugo_buste_marbre_Musée_Rodin_S.00464_Paris.png"
+    },
+    {
+      "id": "white_marble_sculpture",
+      "label": "White Marble Sculpture",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Victor_Hugo_buste_marbre_Musée_Rodin_S.00464_Paris.png"
+    }
+  ],
+  "edges": [
+    {
+      "source": "readme_photosphere",
+      "target": "readme_photosphere_cli",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/README.md",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_photosphere",
+      "target": "readme_photosphere_web_app",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/README.md",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "cli_readme_package",
+      "target": "readme_photosphere_cli",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/cli/README.md",
+      "source_location": "L1-L3",
+      "weight": 1.0
+    },
+    {
+      "source": "contracts_readme_schemas",
+      "target": "cli_readme_package",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/contracts/README.md",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "contracts_readme_schemas",
+      "target": "readme_photosphere_web_app",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/contracts/README.md",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "docker_compose_services",
+      "target": "cli_readme_package",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docker-compose.yml",
+      "source_location": "L30-L36",
+      "weight": 1.0
+    },
+    {
+      "source": "docker_compose_services",
+      "target": "readme_photosphere_web_app",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docker-compose.yml",
+      "source_location": "L50-L68",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_ai_tagging_and_captioning_moondream2",
+      "target": "cli_readme_package",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/ai-tagging-and-captioning.md",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_ai_tagging_and_captioning_backfill",
+      "target": "docs_designs_ai_tagging_and_captioning_moondream2",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/ai-tagging-and-captioning.md",
+      "source_location": "L33-L35",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_cli_refactor_followups_hardening",
+      "target": "docs_designs_cli_refactoring_and_mirrored_tests_plan",
+      "relation": "rationale_for",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/cli-refactor-followups.md",
+      "source_location": "L11-L21",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_cli_refactoring_and_mirrored_tests_plan",
+      "target": "cli_readme_package",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/cli-refactoring-and-mirrored-tests.md",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_cli_routing_mode_and_periodic_commits_design",
+      "target": "cli_readme_package",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/cli-routing-mode-and-periodic-commits.md",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_cli_routing_mode_and_periodic_commits_design",
+      "target": "contracts_readme_schemas",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/cli-routing-mode-and-periodic-commits.md",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_frontend_design_system_architecture",
+      "target": "readme_photosphere_web_app",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/frontend-design-system.md",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_frontend_design_system_architecture",
+      "target": "contracts_readme_schemas",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/frontend-design-system.md",
+      "source_location": "L107",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_host_native_cli_packaging_design",
+      "target": "cli_readme_package",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/host-native-cli-packaging.md",
+      "source_location": "L17-L20",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_ingest_latency_reduction_design",
+      "target": "docs_designs_ai_tagging_and_captioning_moondream2",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/ingest-latency-reduction.md",
+      "source_location": "L13-L25",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_photosphere_gcp_bootstrap_scripts_init",
+      "target": "docs_designs_photosphere_gcp_bootstrap_photosphere_config_json",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-gcp-bootstrap.md",
+      "source_location": "L11-L13",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_photosphere_gcp_bootstrap_bootstrap_provisioner",
+      "target": "docs_designs_photosphere_gcp_bootstrap_google_rest_client",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-gcp-bootstrap.md",
+      "source_location": "L276-L284",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_photosphere_gcp_bootstrap_scripts_init",
+      "target": "infra_readme_doc",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/infra/README.md",
+      "source_location": "L13-L13",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_photosphere_v3_scaffolding_doc",
+      "target": "docs_originals_initial_spec_doc",
+      "relation": "cites",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-v3-scaffolding.md",
+      "source_location": "L267-L267",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_originals_2026_11_15_drift_report_doc",
+      "target": "docs_originals_initial_spec_doc",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/originals/2026-11-15_DRIFT_REPORT.md",
+      "source_location": "L4-L4",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_photosphere_v3_scaffolding_migrate_v2_to_v3",
+      "target": "docs_designs_photosphere_v3_scaffolding_flat_sha1_json_db",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-v3-scaffolding.md",
+      "source_location": "L197-L201",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_recreation_roadmap_doc",
+      "target": "docs_designs_photosphere_v3_scaffolding_dual_bucket_architecture",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/recreation-roadmap.md",
+      "source_location": "L21-L21",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_recreation_roadmap_writable_albums_mutex",
+      "target": "infra_readme_doc",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/recreation-roadmap.md",
+      "source_location": "L130-L130",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_world_map_heatmap_get_api_map_heatmap",
+      "target": "docs_designs_recreation_roadmap_server_side_indexes",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/world-map-heatmap.md",
+      "source_location": "L110-L123",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_designs_world_map_heatmap_map_inspect_drawer",
+      "target": "docs_designs_recreation_roadmap_server_side_indexes",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/world-map-heatmap.md",
+      "source_location": "L221-L221",
+      "weight": 1.0
+    },
+    {
+      "source": "ssr_readme_doc",
+      "target": "docs_designs_photosphere_gcp_bootstrap_photosphere_config_json",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/ssr/README.md",
+      "source_location": "L7-L7",
+      "weight": 1.0
+    },
+    {
+      "source": "ssr_readme_doc",
+      "target": "docs_designs_recreation_roadmap_dual_auth_boundary",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/ssr/README.md",
+      "source_location": "L8-L11",
+      "weight": 1.0
+    },
+    {
+      "source": "ssr_docker_compose_service",
+      "target": "ssr_readme_doc",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/ssr/docker-compose.yml",
+      "source_location": "L1-L17",
+      "weight": 1.0
+    },
+    {
+      "source": "gif_photosphere_v3_logo",
+      "target": "gif_camera_lens_sphere_motif",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/assets/gif.gif",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "gif_photosphere_v3_logo",
+      "target": "gif_v3_badge",
+      "relation": "displays",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/assets/gif.gif",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "photosphere_v3_icon",
+      "target": "photosphere_v3_brand",
+      "relation": "semantically_similar_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/assets/icon.jpeg",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "photosphere_v3_icon_svg",
+      "target": "photosphere_v3_brand_icon",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/assets/photosphere_v3_icon.svg"
+    },
+    {
+      "source": "afrovenator_abakensis_dinosaur_png",
+      "target": "afrovenator_abakensis",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Afrovenator_abakensis_dinosaur.png"
+    },
+    {
+      "source": "afrovenator_abakensis_dinosaur_png",
+      "target": "dinosaur_illustration",
+      "relation": "is_a",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Afrovenator_abakensis_dinosaur.png"
+    },
+    {
+      "source": "afrovenator_abakensis",
+      "target": "theropod_dinosaur",
+      "relation": "is_a",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Afrovenator_abakensis_dinosaur.png"
+    },
+    {
+      "source": "agate_de_l_esterel_img",
+      "target": "esterel_agate_mineral",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Agate_de_l'Esterel.jpg"
+    },
+    {
+      "source": "esterel_agate_mineral",
+      "target": "chalcedony_banding",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Agate_de_l'Esterel.jpg"
+    },
+    {
+      "source": "esterel_agate_mineral",
+      "target": "iron_oxide_inclusions",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Agate_de_l'Esterel.jpg"
+    },
+    {
+      "source": "agate_de_l_esterel_img",
+      "target": "black_background_studio",
+      "relation": "has_background",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Agate_de_l'Esterel.jpg"
+    },
+    {
+      "source": "charioteer_of_delphi_image",
+      "target": "charioteer_of_delphi_sculpture",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "charioteer_of_delphi_sculpture",
+      "target": "delphi_archaeological_museum",
+      "relation": "housed_at",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95
+    },
+    {
+      "source": "charioteer_of_delphi_sculpture",
+      "target": "bronze_sculpture_medium",
+      "relation": "made_of",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "charioteer_of_delphi_sculpture",
+      "target": "bronze_reins",
+      "relation": "holds",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "charioteer_of_delphi_sculpture",
+      "target": "pleated_tunic_chiton",
+      "relation": "wears",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "avaceratops_dinosaur_png",
+      "target": "avaceratops",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Avaceratops_dinosaur.png"
+    },
+    {
+      "source": "avaceratops",
+      "target": "ceratopsian_dinosaur",
+      "relation": "is_a",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Avaceratops_dinosaur.png"
+    },
+    {
+      "source": "avaceratops",
+      "target": "beak_and_brow_horns",
+      "relation": "has_feature",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Avaceratops_dinosaur.png"
+    },
+    {
+      "source": "avaceratops",
+      "target": "solid_neck_frill",
+      "relation": "has_feature",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Avaceratops_dinosaur.png"
+    },
+    {
+      "source": "avaceratops_dinosaur_png",
+      "target": "spotted_green_and_ochre_skin",
+      "relation": "illustrates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Avaceratops_dinosaur.png"
+    },
+    {
+      "source": "baska_voda_mountain_image",
+      "target": "baska_voda_mountain_peak",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "baska_voda_mountain_image",
+      "target": "pine_forest_foreground",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "baska_voda_mountain_image",
+      "target": "clear_blue_sky",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "baska_voda_mountain_image",
+      "target": "baska_voda_croatia",
+      "relation": "located_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85
+    },
+    {
+      "source": "hurricane_r4118_arp_jpg",
+      "target": "hawker_hurricane_r4118",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "hawker_hurricane_r4118",
+      "target": "raf_roundel",
+      "relation": "displays",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "hawker_hurricane_r4118",
+      "target": "raf_fin_flash",
+      "relation": "displays",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "hawker_hurricane_r4118",
+      "target": "fuselage_code_up_w",
+      "relation": "displays",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "hawker_hurricane_r4118",
+      "target": "three_blade_propeller",
+      "relation": "has_part",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "hawker_hurricane_r4118",
+      "target": "ventral_radiator",
+      "relation": "has_part",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "hawker_hurricane_r4118",
+      "target": "tailwheel",
+      "relation": "has_part",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "japanese_squirrel_jpg",
+      "target": "japanese_squirrel",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "japanese_squirrel_jpg",
+      "target": "mossy_tree_branch",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "japanese_squirrel_jpg",
+      "target": "autumn_leaves",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "japanese_squirrel",
+      "target": "mossy_tree_branch",
+      "relation": "rests_paws_on",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "japanese_squirrel",
+      "target": "autumn_leaves",
+      "relation": "stands_on",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "mossy_tree_branch",
+      "target": "forest_floor_habitat",
+      "relation": "part_of",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95
+    },
+    {
+      "source": "autumn_leaves",
+      "target": "forest_floor_habitat",
+      "relation": "part_of",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95
+    },
+    {
+      "source": "m_nonius_balbus_equestrian_statue",
+      "target": "marcus_nonius_balbus",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/M.Nonius_Balbus_Nuceria_equestrian_Statue_MANN.png"
+    },
+    {
+      "source": "m_nonius_balbus_equestrian_statue",
+      "target": "equestrian_horse",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/M.Nonius_Balbus_Nuceria_equestrian_Statue_MANN.png"
+    },
+    {
+      "source": "marcus_nonius_balbus",
+      "target": "equestrian_horse",
+      "relation": "rides",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/M.Nonius_Balbus_Nuceria_equestrian_Statue_MANN.png"
+    },
+    {
+      "source": "m_nonius_balbus_equestrian_statue",
+      "target": "mann_museum",
+      "relation": "housed_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/M.Nonius_Balbus_Nuceria_equestrian_Statue_MANN.png"
+    },
+    {
+      "source": "nipponosaurus_dinosaur_png",
+      "target": "nipponosaurus",
+      "relation": "depicts",
+      "confidence": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Nipponosaurus_dinosaur.png"
+    },
+    {
+      "source": "nipponosaurus",
+      "target": "hadrosaurid_dinosaur",
+      "relation": "is_a",
+      "confidence": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Nipponosaurus_dinosaur.png"
+    },
+    {
+      "source": "nipponosaurus",
+      "target": "yellow_brown_striped_coloration",
+      "relation": "has_feature",
+      "confidence": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Nipponosaurus_dinosaur.png"
+    },
+    {
+      "source": "project_775m_azov_2008_g1_jpg",
+      "target": "bdks_azov_151",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg"
+    },
+    {
+      "source": "bdks_azov_151",
+      "target": "project_775m_class",
+      "relation": "instance_of",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg"
+    },
+    {
+      "source": "bdks_azov_151",
+      "target": "hull_number_151",
+      "relation": "bears_marking",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg"
+    },
+    {
+      "source": "bdks_azov_151",
+      "target": "russian_navy_ensign",
+      "relation": "flies",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg"
+    },
+    {
+      "source": "bdks_azov_151",
+      "target": "forward_gun_turret",
+      "relation": "equipped_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg"
+    },
+    {
+      "source": "bdks_azov_151",
+      "target": "mast_radome",
+      "relation": "equipped_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg"
+    },
+    {
+      "source": "project_775m_azov_2008_g1_jpg",
+      "target": "coastal_cityscape",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Project_775M_AZOV_2008_G1.jpg"
+    },
+    {
+      "source": "red_knobbed_starfish_image",
+      "target": "red_knobbed_starfish",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Red-knobbed.starfish.arp.jpg"
+    },
+    {
+      "source": "red_knobbed_starfish",
+      "target": "live_rock_substrate",
+      "relation": "rests_on",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Red-knobbed.starfish.arp.jpg"
+    },
+    {
+      "source": "red_knobbed_starfish",
+      "target": "sandy_seabed_substrate",
+      "relation": "adjacent_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Red-knobbed.starfish.arp.jpg"
+    },
+    {
+      "source": "red_knobbed_starfish",
+      "target": "marine_aquarium_habitat",
+      "relation": "inhabits",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Red-knobbed.starfish.arp.jpg"
+    },
+    {
+      "source": "russet_potato_cultivar_image",
+      "target": "russet_potato_cultivar",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "russet_potato_cultivar_image",
+      "target": "potato_sprouts",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "russet_potato_cultivar_image",
+      "target": "cut_potato_cross_section",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "russet_potato_cultivar",
+      "target": "potato_sprouts",
+      "relation": "produces",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95
+    },
+    {
+      "source": "cut_potato_cross_section",
+      "target": "russet_potato_cultivar",
+      "relation": "part_of",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "sand_lizard_2008_g1_jpg",
+      "target": "sand_lizard",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Sand_Lizard_2008_G1.jpg"
+    },
+    {
+      "source": "sand_lizard",
+      "target": "moss_covered_log",
+      "relation": "rests_on",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Sand_Lizard_2008_G1.jpg"
+    },
+    {
+      "source": "sand_lizard",
+      "target": "dorsal_spotted_scales",
+      "relation": "has_feature",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Sand_Lizard_2008_G1.jpg"
+    },
+    {
+      "source": "moss_covered_log",
+      "target": "dry_leaves_and_twigs",
+      "relation": "surrounded_by",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Sand_Lizard_2008_G1.jpg"
+    },
+    {
+      "source": "the_tempest_rodin_s01092",
+      "target": "auguste_rodin",
+      "relation": "created_by",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95
+    },
+    {
+      "source": "the_tempest_rodin_s01092",
+      "target": "musee_rodin_paris",
+      "relation": "housed_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95
+    },
+    {
+      "source": "the_tempest_rodin_s01092",
+      "target": "white_marble",
+      "relation": "carved_from",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "the_tempest_rodin_s01092",
+      "target": "expressive_face_tempest",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "victor_hugo_buste_marbre_musee_rodin_s00464_paris_png",
+      "target": "victor_hugo_marble_bust",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Victor_Hugo_buste_marbre_Musée_Rodin_S.00464_Paris.png"
+    },
+    {
+      "source": "victor_hugo_marble_bust",
+      "target": "victor_hugo",
+      "relation": "portrays",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Victor_Hugo_buste_marbre_Musée_Rodin_S.00464_Paris.png"
+    },
+    {
+      "source": "victor_hugo_marble_bust",
+      "target": "auguste_rodin",
+      "relation": "sculpted_by",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Victor_Hugo_buste_marbre_Musée_Rodin_S.00464_Paris.png"
+    },
+    {
+      "source": "victor_hugo_marble_bust",
+      "target": "musee_rodin_paris",
+      "relation": "housed_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Victor_Hugo_buste_marbre_Musée_Rodin_S.00464_Paris.png"
+    },
+    {
+      "source": "victor_hugo_marble_bust",
+      "target": "white_marble_sculpture",
+      "relation": "is_a",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Victor_Hugo_buste_marbre_Musée_Rodin_S.00464_Paris.png"
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "photosphere_core_architecture",
+      "label": "Photosphere Core Architecture (CLI, Contracts, Web App)",
+      "nodes": [
+        "cli_readme_package",
+        "contracts_readme_schemas",
+        "readme_photosphere_web_app"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/contracts/README.md"
+    },
+    {
+      "id": "dual_bucket_storage_and_rules_architecture",
+      "label": "Dual-Bucket GCS & Email-Gated Firebase Rules Architecture",
+      "nodes": [
+        "docs_designs_photosphere_v3_scaffolding_dual_bucket_architecture",
+        "docs_designs_photosphere_gcp_bootstrap_scripts_init",
+        "infra_readme_doc"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/photosphere-gcp-bootstrap.md"
+    },
+    {
+      "id": "ssr_in_memory_index_and_map_query_pipeline",
+      "label": "SSR In-Memory Index & Spatial Map Query Pipeline",
+      "nodes": [
+        "docs_designs_recreation_roadmap_server_side_indexes",
+        "docs_designs_world_map_heatmap_get_api_map_heatmap",
+        "docs_designs_world_map_heatmap_map_inspect_drawer"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/docs/designs/world-map-heatmap.md"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

@@ -1,6 +1,10 @@
 import { createError, defineEventHandler, setCookie } from 'h3'
 import { useRuntimeConfig } from '#imports'
-import { MEDIA_COOKIE_NAME, createMediaSessionCookieValue } from '../../services/auth.service'
+import {
+  MEDIA_COOKIE_NAME,
+  createMediaSessionCookieValue,
+  resolveMediaSessionMaxAge,
+} from '../../services/auth.service'
 import { requireBearerToken } from '../../utils/runtime-storage'
 
 export default defineEventHandler((event) => {
@@ -14,13 +18,21 @@ export default defineEventHandler((event) => {
 
   const idToken = requireBearerToken(event)
   const cfg = useRuntimeConfig(event)
-  const cookieValue = createMediaSessionCookieValue(auth, idToken, cfg.auth?.sessionSecret)
+  const maxAge = resolveMediaSessionMaxAge(idToken, 3600)
+  const mountedVolumePath = cfg.storage?.mountedVolumePath
+  const cookieValue = createMediaSessionCookieValue(
+    auth,
+    idToken,
+    cfg.auth?.sessionSecret,
+    maxAge,
+    mountedVolumePath
+  )
 
   setCookie(event, MEDIA_COOKIE_NAME, cookieValue, {
     httpOnly: true,
     sameSite: 'lax',
     path: '/api/media',
-    maxAge: 3600,
+    maxAge,
     secure: process.env.NODE_ENV === 'production',
   })
 

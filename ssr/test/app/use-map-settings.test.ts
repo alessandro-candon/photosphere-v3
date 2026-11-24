@@ -1,4 +1,5 @@
 import { createPinia, setActivePinia } from 'pinia'
+import { effectScope, nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   computeDynamicHeatOptions,
@@ -117,6 +118,28 @@ describe('useMapSettings composable & helpers', () => {
 
     resetMapSettings()
     expect(settings.value.baseRadius).toBe(DEFAULT_WORLD_HEATMAP_SETTINGS.baseRadius)
+    expect(settings.value.baseRadius).toBe(16)
     expect(settings.value.basemap).toBe('dark')
+  })
+
+  it('keeps theme-to-basemap sync alive after the first calling component scope unmounts', async () => {
+    const dispatchEvent = vi.fn()
+    const addEventListener = vi.fn()
+    const removeEventListener = vi.fn()
+    vi.stubGlobal('window', { dispatchEvent, addEventListener, removeEventListener })
+
+    const authStore = useAuthStore()
+    authStore.setTheme('dark')
+
+    const componentScope = effectScope()
+    const firstCall = componentScope.run(() => useMapSettings())!
+    expect(firstCall.settings.value.basemap).toBe('dark')
+
+    // Simulate unmounting the first component that initialized useMapSettings()
+    componentScope.stop()
+
+    authStore.setTheme('light')
+    await nextTick()
+    expect(firstCall.settings.value.basemap).toBe('light')
   })
 })

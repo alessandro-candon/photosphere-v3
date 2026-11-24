@@ -2,6 +2,7 @@ FROM node:22-slim AS builder
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+ENV PHOTOSPHERE_SKIP_BUILD_CONFIG=1
 RUN corepack enable
 
 WORKDIR /app
@@ -10,7 +11,6 @@ COPY ssr/package.json ssr/pnpm-lock.yaml ssr/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY ssr/ .
-COPY photosphere.config.json ./photosphere.config.json
 RUN pnpm build
 
 FROM node:22-slim AS runner
@@ -28,7 +28,6 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 COPY --from=builder --chown=nuxtjs:nodejs /app/.output ./.output
 COPY --from=builder --chown=nuxtjs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nuxtjs:nodejs /app/photosphere.config.json ./photosphere.config.json
 
 USER nuxtjs
 

@@ -1,13 +1,17 @@
-import { computed, ref, watch } from 'vue'
+import { getCurrentScope, onScopeDispose, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../stores/auth'
-import type { GalleryFilters, MediaDetail, MediaGridItem } from '../types'
+import type { GalleryFilters, MediaGridItem } from '../types'
+import { useMediaLightbox } from './useMediaLightbox'
 import { PhotosphereApiError, usePhotosphereApi } from './usePhotosphereApi'
+
+const isAbortError = (error: unknown): boolean =>
+  error instanceof DOMException && error.name === 'AbortError'
 
 export const useMediaFeed = (getFilters: () => GalleryFilters, pageSize = 50) => {
   const authStore = useAuthStore()
   const { initialized, isAuthenticated, preferredLang } = storeToRefs(authStore)
-  const { listFiles, getFileDetail } = usePhotosphereApi()
+  const { listFiles } = usePhotosphereApi()
 
   const items = ref<MediaGridItem[]>([])
   const totalCount = ref(0)
@@ -18,39 +22,49 @@ export const useMediaFeed = (getFilters: () => GalleryFilters, pageSize = 50) =>
   const errorMessage = ref('')
   const errorRequestId = ref<string | undefined>(undefined)
 
-  const lightboxIndex = ref<number | null>(null)
-  const activeDetail = ref<MediaDetail | null>(null)
-  const detailLoading = ref(false)
+  let activeInitialController: AbortController | null = null
+  let activeMoreController: AbortController | null = null
 
-  const activeItem = computed(() => {
-    if (lightboxIndex.value === null) return null
-    return items.value[lightboxIndex.value] || null
-  })
-
-  const hasPrev = computed(() => lightboxIndex.value !== null && lightboxIndex.value > 0)
-  const hasNext = computed(
-    () =>
-      lightboxIndex.value !== null &&
-      (lightboxIndex.value < items.value.length - 1 || hasMore.value)
-  )
+  const cancelInFlight = () => {
+    if (activeInitialController) {
+      activeInitialController.abort()
+      activeInitialController = null
+    }
+    if (activeMoreController) {
+      activeMoreController.abort()
+      activeMoreController = null
+    }
+  }
 
   const loadInitial = async () => {
     if (!isAuthenticated.value) return
+    cancelInFlight()
+    lightbox.closeLightbox()
+
+    const controller = new AbortController()
+    activeInitialController = controller
     loading.value = true
+    loadingMore.value = false
     errorMessage.value = ''
     errorRequestId.value = undefined
     page.value = 1
 
     try {
-      const response = await listFiles(getFilters(), 1, pageSize)
+      const response = await listFiles(getFilters(), 1, pageSize, { signal: controller.signal })
+      if (activeInitialController !== controller) return
       items.value = response.items
       totalCount.value = response.totalCount
       hasMore.value = response.hasMore
     } catch (error) {
+      if (isAbortError(error)) return
+      if (activeInitialController !== controller) return
       errorMessage.value = error instanceof Error ? error.message : 'Failed to load media'
       errorRequestId.value = error instanceof PhotosphereApiError ? error.requestId : undefined
     } finally {
-      loading.value = false
+      if (activeInitialController === controller) {
+        loading.value = false
+        activeInitialController = null
+      }
     }
   }
 
@@ -58,69 +72,38 @@ export const useMediaFeed = (getFilters: () => GalleryFilters, pageSize = 50) =>
     if (!isAuthenticated.value || loading.value || loadingMore.value || !hasMore.value) {
       return
     }
+    const controller = new AbortController()
+    activeMoreController = controller
     loadingMore.value = true
     const nextPage = page.value + 1
+
     try {
-      const response = await listFiles(getFilters(), nextPage, pageSize)
+      const response = await listFiles(getFilters(), nextPage, pageSize, {
+        signal: controller.signal,
+      })
+      if (activeMoreController !== controller) return
       items.value.push(...response.items)
       page.value = nextPage
       totalCount.value = response.totalCount
       hasMore.value = response.hasMore
     } catch (error) {
+      if (isAbortError(error)) return
+      if (activeMoreController !== controller) return
       errorMessage.value = error instanceof Error ? error.message : 'Failed to load more media'
       errorRequestId.value = error instanceof PhotosphereApiError ? error.requestId : undefined
     } finally {
-      loadingMore.value = false
+      if (activeMoreController === controller) {
+        loadingMore.value = false
+        activeMoreController = null
+      }
     }
   }
 
-  const loadDetailForIndex = async (idx: number) => {
-    const target = items.value[idx]
-    if (!target) {
-      activeDetail.value = null
-      return
-    }
-    detailLoading.value = true
-    activeDetail.value = null
-    try {
-      activeDetail.value = await getFileDetail(target.hash)
-    } catch {
-      activeDetail.value = null
-    } finally {
-      detailLoading.value = false
-    }
-  }
-
-  const openLightbox = async (item: MediaGridItem) => {
-    const idx = items.value.findIndex((entry) => entry.hash === item.hash)
-    if (idx < 0) return
-    lightboxIndex.value = idx
-    await loadDetailForIndex(idx)
-  }
-
-  const closeLightbox = () => {
-    lightboxIndex.value = null
-    activeDetail.value = null
-  }
-
-  const prevItem = async () => {
-    if (lightboxIndex.value === null || lightboxIndex.value <= 0) return
-    const nextIdx = lightboxIndex.value - 1
-    lightboxIndex.value = nextIdx
-    await loadDetailForIndex(nextIdx)
-  }
-
-  const nextItem = async () => {
-    if (lightboxIndex.value === null) return
-    const nextIdx = lightboxIndex.value + 1
-    if (nextIdx >= items.value.length && hasMore.value) {
-      await loadMore()
-    }
-    if (nextIdx < items.value.length) {
-      lightboxIndex.value = nextIdx
-      await loadDetailForIndex(nextIdx)
-    }
-  }
+  const lightbox = useMediaLightbox({
+    items,
+    hasMore,
+    loadMore,
+  })
 
   watch(
     [initialized, isAuthenticated, preferredLang, () => JSON.stringify(getFilters())],
@@ -131,6 +114,12 @@ export const useMediaFeed = (getFilters: () => GalleryFilters, pageSize = 50) =>
     { immediate: true }
   )
 
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      cancelInFlight()
+    })
+  }
+
   return {
     items,
     totalCount,
@@ -139,16 +128,16 @@ export const useMediaFeed = (getFilters: () => GalleryFilters, pageSize = 50) =>
     loadingMore,
     errorMessage,
     errorRequestId,
-    activeItem,
-    activeDetail,
-    detailLoading,
-    hasPrev,
-    hasNext,
+    activeItem: lightbox.activeItem,
+    activeDetail: lightbox.activeDetail,
+    detailLoading: lightbox.detailLoading,
+    hasPrev: lightbox.hasPrev,
+    hasNext: lightbox.hasNext,
     loadInitial,
     loadMore,
-    openLightbox,
-    closeLightbox,
-    prevItem,
-    nextItem,
+    openLightbox: lightbox.openLightbox,
+    closeLightbox: lightbox.closeLightbox,
+    prevItem: lightbox.prevItem,
+    nextItem: lightbox.nextItem,
   }
 }

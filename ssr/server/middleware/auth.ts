@@ -32,6 +32,7 @@ export const authenticateApiRequest = async (
   const runtimeConfig = useRuntimeConfig(event)
   const allowedEmails = allowedEmailsOverride ?? runtimeConfig.auth?.allowedEmails
   const sessionSecret = sessionSecretOverride ?? runtimeConfig.auth?.sessionSecret
+  const mountedVolumePath = runtimeConfig.storage?.mountedVolumePath
   const authHeader = getHeader(event, 'authorization')
 
   try {
@@ -44,7 +45,12 @@ export const authenticateApiRequest = async (
       }
       const cookieHeader = getHeader(event, 'cookie')
       const cookieVal = extractCookieValue(cookieHeader, MEDIA_COOKIE_NAME)
-      const verified = verifyMediaSessionCookieValue(cookieVal, allowedEmails, sessionSecret)
+      const verified = verifyMediaSessionCookieValue(
+        cookieVal,
+        allowedEmails,
+        sessionSecret,
+        mountedVolumePath
+      )
       event.context.auth = verified.user
       event.context.idToken = verified.idToken
       return

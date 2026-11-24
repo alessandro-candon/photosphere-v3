@@ -1,13 +1,22 @@
+import {
+  DATE_ONLY_REGEX,
+  MONTH_DAY_REGEX,
+  toEpochMilliseconds,
+  type MediaDetail,
+  type MediaFileType,
+  type MediaGridItem,
+  type SearchFieldMode,
+} from '#shared/index'
 import type {
   AlbumRecord,
   LanguageDictionaries,
   MediaDatabaseSnapshot,
-  MediaFileType,
   RawMediaRecord,
 } from '../types/cache'
-import { toEpochMilliseconds } from './file-database-cache'
 
-export type SearchFieldMode = 'labels' | 'captions'
+export type { SearchFieldMode }
+export type MediaGridItemDto = MediaGridItem
+export type MediaDetailDto = MediaDetail
 
 export interface MediaFilterParams {
   q?: string
@@ -25,29 +34,7 @@ export interface MediaFilterParams {
   radiusKm?: number
 }
 
-export interface MediaGridItemDto {
-  hash: string
-  fileType: MediaFileType
-  createdAt: string | null
-  createdAtTimestamp: number | null
-  fileName: string
-  hasThumbnail: boolean
-  thumbnailUrl: string | null
-  sourceUrl: string
-  latitude: number | null
-  longitude: number | null
-  geohash: string | null
-  distanceKm?: number | null
-}
-
-export interface MediaDetailDto extends MediaGridItemDto {
-  labels: string[]
-  caption: string | null
-}
-
 const EARTH_RADIUS_KM = 6371
-const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/
-const MONTH_DAY_REGEX = /^\d{2}-\d{2}$/
 
 export const extractFileName = (gsUri: string): string => {
   const clean = gsUri.split('?')[0] || gsUri
@@ -84,23 +71,49 @@ const parseDateBoundMs = (raw: string | undefined, bound: 'start' | 'end'): numb
   return Number.isNaN(parsed) ? null : parsed
 }
 
+const narrowHashesWithIndex = (
+  current: string[],
+  indexed: string[],
+  isDefaultSortedBase: boolean
+): string[] => {
+  if (isDefaultSortedBase) {
+    return indexed
+  }
+  const allowed = new Set(current)
+  return indexed.filter((h) => allowed.has(h))
+}
+
 export const filterMediaHashes = (
   snapshot: MediaDatabaseSnapshot,
   filters: MediaFilterParams,
   options: { dicts?: LanguageDictionaries; albums?: AlbumRecord[]; baseHashes?: string[] } = {}
 ): string[] => {
   let baseHashes = options.baseHashes ?? snapshot.sortedHashes
+  let isDefaultSortedBase = !options.baseHashes
+
   if (filters.memoryDate) {
     if (!MONTH_DAY_REGEX.test(filters.memoryDate)) {
       return []
     }
     const memoryHashes = snapshot.byMonthDay[filters.memoryDate] || []
-    if (options.baseHashes) {
-      const allowed = new Set(options.baseHashes)
-      baseHashes = memoryHashes.filter((h) => allowed.has(h))
-    } else {
-      baseHashes = memoryHashes
-    }
+    baseHashes = narrowHashesWithIndex(baseHashes, memoryHashes, isDefaultSortedBase)
+    isDefaultSortedBase = false
+  }
+
+  const hasLabelIndex =
+    typeof filters.labelIndex === 'number' && Number.isInteger(filters.labelIndex)
+  if (hasLabelIndex) {
+    const labelHashes = snapshot.byLabelIndex[filters.labelIndex!] || []
+    baseHashes = narrowHashesWithIndex(baseHashes, labelHashes, isDefaultSortedBase)
+    isDefaultSortedBase = false
+  }
+
+  const hasCaptionIndex =
+    typeof filters.captionIndex === 'number' && Number.isInteger(filters.captionIndex)
+  if (hasCaptionIndex && snapshot.byCaptionIndex) {
+    const captionHashes = snapshot.byCaptionIndex[filters.captionIndex!] || []
+    baseHashes = narrowHashesWithIndex(baseHashes, captionHashes, isDefaultSortedBase)
+    isDefaultSortedBase = false
   }
 
   let requiredAlbumSet: Set<string> | null = null
@@ -141,11 +154,6 @@ export const filterMediaHashes = (
     ? Math.max(Math.abs(Math.cos((filters.lat! * Math.PI) / 180)), 0.01)
     : 1
   const lngDelta = hasLocationFilter ? radiusKm / (111.32 * cosLat) : 0
-
-  const hasLabelIndex =
-    typeof filters.labelIndex === 'number' && Number.isInteger(filters.labelIndex)
-  const hasCaptionIndex =
-    typeof filters.captionIndex === 'number' && Number.isInteger(filters.captionIndex)
 
   const needle = (filters.q || '').trim().toLowerCase()
   const dicts = options.dicts

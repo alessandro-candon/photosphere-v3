@@ -1,8 +1,7 @@
 import { computed } from 'vue'
 import { navigateTo, useRoute } from '#imports'
+import { VALID_FILE_TYPES } from '#shared/constants'
 import type { GalleryFilters, MediaFileType, SearchFieldMode } from '../types'
-
-const VALID_FILE_TYPES = new Set<MediaFileType>(['FILE', 'IMAGE', 'VIDEO'])
 
 const firstString = (value: unknown): string | undefined => {
   if (typeof value === 'string') return value.trim() || undefined

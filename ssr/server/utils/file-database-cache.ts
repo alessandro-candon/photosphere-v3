@@ -1,4 +1,13 @@
 import { createError } from 'h3'
+import {
+  formatUtcMonthDay,
+  GEOHASH_PRECISIONS,
+  LANG_REGEX,
+  SHA1_REGEX,
+  toEpochMilliseconds,
+  UINT_KEY_REGEX,
+  VALID_FILE_TYPES,
+} from '#shared/index'
 import type {
   GeohashClusterBucket,
   GeohashPrecision,
@@ -7,16 +16,17 @@ import type {
   MediaDatabaseSnapshot,
   RawMediaRecord,
 } from '../types/cache'
-import { encodeGeohash, GEOHASH_PRECISIONS, isValidCoordinatePair } from './geohash'
+import { createSingleFlight } from './async-mutex'
+import { encodeGeohash, isValidCoordinatePair } from './geohash'
 import { loadJsonDatabase, type StorageOptions } from './storage-download'
 
-const SHA1_REGEX = /^[0-9a-f]{40}$/
-const UINT_KEY_REGEX = /^(0|[1-9][0-9]*)$/
-const VALID_FILE_TYPES = new Set(['FILE', 'IMAGE', 'VIDEO'])
-const LANG_REGEX = /^[a-z]{2}(-[a-z]{2})?$/i
+export { formatUtcMonthDay, toEpochMilliseconds }
 
 let mediaDbCache: MediaDatabaseSnapshot | null = null
 const languageDictCache = new Map<string, LanguageDictionaries>()
+let cacheEpoch = 0
+const dbSingleFlight = createSingleFlight<string, MediaDatabaseSnapshot>()
+const dictSingleFlight = createSingleFlight<string, LanguageDictionaries>()
 
 export const normalizeLanguageCode = (raw: unknown, fallback = 'en'): string => {
   if (typeof raw !== 'string') {
@@ -27,21 +37,11 @@ export const normalizeLanguageCode = (raw: unknown, fallback = 'en'): string => 
 }
 
 export const invalidateFileDatabaseCache = (): void => {
+  cacheEpoch += 1
   mediaDbCache = null
   languageDictCache.clear()
-}
-
-export const toEpochMilliseconds = (timestamp: number): number =>
-  Math.abs(timestamp) < 1e11 ? timestamp * 1000 : timestamp
-
-export const formatUtcMonthDay = (timestamp: number): string | null => {
-  const date = new Date(toEpochMilliseconds(timestamp))
-  if (Number.isNaN(date.getTime())) {
-    return null
-  }
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
-  const day = String(date.getUTCDate()).padStart(2, '0')
-  return `${month}-${day}`
+  dbSingleFlight.clear()
+  dictSingleFlight.clear()
 }
 
 export const validateMediaDatabasePayload = (raw: unknown): Record<string, RawMediaRecord> => {
@@ -94,7 +94,7 @@ export const validateMediaDatabasePayload = (raw: unknown): Record<string, RawMe
         statusMessage: `Invalid source_bucket_uri for record '${key}'`,
       })
     }
-    if (typeof rec.file_type !== 'string' || !VALID_FILE_TYPES.has(rec.file_type)) {
+    if (typeof rec.file_type !== 'string' || !VALID_FILE_TYPES.has(rec.file_type as never)) {
       throw createError({
         statusCode: 500,
         statusMessage: `Invalid file_type '${String(rec.file_type)}' for record '${key}'`,
@@ -149,11 +149,13 @@ export const buildDerivedMediaIndexes = (
 ): {
   byMonthDay: Record<string, string[]>
   byLabelIndex: Record<number, string[]>
+  byCaptionIndex: Record<number, string[]>
   geolocatedHashes: string[]
   unfilteredGeohashBuckets: Record<GeohashPrecision, GeohashClusterBucket[]>
 } => {
   const byMonthDay: Record<string, string[]> = {}
   const byLabelIndex: Record<number, string[]> = {}
+  const byCaptionIndex: Record<number, string[]> = {}
   const geolocatedHashes: string[] = []
   const accumulators: Record<
     GeohashPrecision,
@@ -180,11 +182,18 @@ export const buildDerivedMediaIndexes = (
       }
     }
 
-    for (const labelIndex of rec.label_indexes) {
+    for (const labelIndex of new Set(rec.label_indexes)) {
       if (!byLabelIndex[labelIndex]) {
         byLabelIndex[labelIndex] = []
       }
       byLabelIndex[labelIndex].push(hash)
+    }
+
+    if (typeof rec.caption_index === 'number' && Number.isInteger(rec.caption_index)) {
+      if (!byCaptionIndex[rec.caption_index]) {
+        byCaptionIndex[rec.caption_index] = []
+      }
+      byCaptionIndex[rec.caption_index]!.push(hash)
     }
 
     if (isValidCoordinatePair(rec.latitude, rec.longitude)) {
@@ -229,7 +238,7 @@ export const buildDerivedMediaIndexes = (
     unfilteredGeohashBuckets[precision] = list
   }
 
-  return { byMonthDay, byLabelIndex, geolocatedHashes, unfilteredGeohashBuckets }
+  return { byMonthDay, byLabelIndex, byCaptionIndex, geolocatedHashes, unfilteredGeohashBuckets }
 }
 
 export const getMediaDatabase = async (
@@ -240,27 +249,40 @@ export const getMediaDatabase = async (
     return mediaDbCache
   }
   const dbFileName = options?.dbFileName || 'photosphere_database_cloud.json'
-  const recordsByHash = await loadJsonDatabase(
-    dbFileName,
-    dbFileName,
-    idToken,
-    validateMediaDatabasePayload,
-    options
-  )
-  const sortedHashes = sortMediaHashesDescending(recordsByHash)
-  const { byMonthDay, byLabelIndex, geolocatedHashes, unfilteredGeohashBuckets } =
-    buildDerivedMediaIndexes(recordsByHash, sortedHashes)
-  const snapshot: MediaDatabaseSnapshot = {
-    recordsByHash,
-    sortedHashes,
-    byMonthDay,
-    byLabelIndex,
-    geolocatedHashes,
-    unfilteredGeohashBuckets,
-    loadedAt: Date.now(),
+  const entryEpoch = cacheEpoch
+
+  const loadSnapshot = async (): Promise<MediaDatabaseSnapshot> => {
+    const recordsByHash = await loadJsonDatabase(
+      dbFileName,
+      dbFileName,
+      idToken,
+      validateMediaDatabasePayload,
+      options
+    )
+    const sortedHashes = sortMediaHashesDescending(recordsByHash)
+    const { byMonthDay, byLabelIndex, byCaptionIndex, geolocatedHashes, unfilteredGeohashBuckets } =
+      buildDerivedMediaIndexes(recordsByHash, sortedHashes)
+    const snapshot: MediaDatabaseSnapshot = {
+      recordsByHash,
+      sortedHashes,
+      byMonthDay,
+      byLabelIndex,
+      byCaptionIndex,
+      geolocatedHashes,
+      unfilteredGeohashBuckets,
+      loadedAt: Date.now(),
+    }
+    if (entryEpoch === cacheEpoch) {
+      mediaDbCache = snapshot
+    }
+    return snapshot
   }
-  mediaDbCache = snapshot
-  return snapshot
+
+  if (options?.forceRefresh) {
+    return await loadSnapshot()
+  }
+
+  return await dbSingleFlight.run(`${dbFileName}:${entryEpoch}`, loadSnapshot)
 }
 
 const loadSingleDictionaryWithFallback = async (
@@ -311,18 +333,32 @@ export const getLanguageDictionaries = async (
 
   const labelsSuffix = options?.labelsSuffix || 'photosphere_image_labelling_database_cloud.json'
   const captionsSuffix = options?.captionsSuffix || 'photosphere_image_caption_database_cloud.json'
+  const entryEpoch = cacheEpoch
 
-  const [labels, captions] = await Promise.all([
-    loadSingleDictionaryWithFallback(safeLang, labelsSuffix, idToken, options),
-    loadSingleDictionaryWithFallback(safeLang, captionsSuffix, idToken, options),
-  ])
+  const loadEntry = async (): Promise<LanguageDictionaries> => {
+    const [labels, captions] = await Promise.all([
+      loadSingleDictionaryWithFallback(safeLang, labelsSuffix, idToken, options),
+      loadSingleDictionaryWithFallback(safeLang, captionsSuffix, idToken, options),
+    ])
 
-  const entry: LanguageDictionaries = {
-    lang: safeLang,
-    labels,
-    captions,
-    loadedAt: Date.now(),
+    const entry: LanguageDictionaries = {
+      lang: safeLang,
+      labels,
+      captions,
+      loadedAt: Date.now(),
+    }
+    if (entryEpoch === cacheEpoch) {
+      languageDictCache.set(safeLang, entry)
+    }
+    return entry
   }
-  languageDictCache.set(safeLang, entry)
-  return entry
+
+  if (options?.forceRefresh) {
+    return await loadEntry()
+  }
+
+  return await dictSingleFlight.run(
+    `${safeLang}:${labelsSuffix}:${captionsSuffix}:${entryEpoch}`,
+    loadEntry
+  )
 }
