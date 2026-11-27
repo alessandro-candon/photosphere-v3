@@ -1,51 +1,35 @@
-import { createError, defineEventHandler, getQuery } from 'h3'
+import { defineEventHandler, getQuery } from 'h3'
 import { useRuntimeConfig } from '#imports'
+import type { SearchSuggestion } from '#shared/types'
 import { getLanguageDictionaries, normalizeLanguageCode } from '../../utils/file-database-cache'
+import {
+  getRuntimeDatabaseNames,
+  parsePaginationParams,
+  parseSearchFieldParam,
+} from '../../utils/request-parsers'
 import { getRuntimeStorageOptions, requireBearerToken } from '../../utils/runtime-storage'
 
-export interface SearchSuggestionItem {
-  text: string
-  kind: 'label' | 'caption'
-  index: number
-}
-
-const parseFieldParam = (raw: unknown): 'labels' | 'captions' | undefined => {
-  if (typeof raw !== 'string' || !raw.trim()) {
-    return undefined
-  }
-  const clean = raw.trim().toLowerCase()
-  if (clean === 'labels' || clean === 'tags') {
-    return 'labels'
-  }
-  if (clean === 'captions') {
-    return 'captions'
-  }
-  throw createError({
-    statusCode: 400,
-    statusMessage: "Bad Request: field must be 'labels', 'tags', or 'captions'",
-  })
-}
+export type SearchSuggestionItem = SearchSuggestion
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
-  const field = parseFieldParam(query.field)
+  const field = parseSearchFieldParam(query.field, 'field')
   const rawQ = typeof query.q === 'string' ? query.q.trim() : ''
   if (!rawQ) {
     return { suggestions: [] as SearchSuggestionItem[] }
   }
 
-  const parsedLimit = parseInt(String(query.limit || '10'), 10)
-  const limit = Math.min(Math.max(Number.isFinite(parsedLimit) ? parsedLimit : 10, 1), 25)
-
+  const { limit } = parsePaginationParams(query, 10, 25)
   const cfg = useRuntimeConfig(event)
   const idToken = requireBearerToken(event)
   const storageOpts = getRuntimeStorageOptions(event)
+  const dbNames = getRuntimeDatabaseNames(event)
   const lang = normalizeLanguageCode(query.lang, cfg.public?.defaultLang || 'en')
 
   const dicts = await getLanguageDictionaries(lang, idToken, {
     ...storageOpts,
-    labelsSuffix: cfg.database?.labelsJsonFileName,
-    captionsSuffix: cfg.database?.captionsJsonFileName,
+    labelsSuffix: dbNames.labelsSuffix,
+    captionsSuffix: dbNames.captionsSuffix,
   })
 
   const needle = rawQ.toLowerCase()

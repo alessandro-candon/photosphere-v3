@@ -32,6 +32,30 @@ export class PhotosphereApiError extends Error {
   }
 }
 
+export const appendGalleryFilterParams = (
+  params: URLSearchParams,
+  filters: GalleryFilters,
+  options: { includeSpatial: boolean }
+): void => {
+  if (filters.q) params.set('q', filters.q)
+  if (filters.searchField) params.set('searchField', filters.searchField)
+  if (filters.labelIndex !== undefined) params.set('labelIndex', String(filters.labelIndex))
+  if (filters.captionIndex !== undefined) params.set('captionIndex', String(filters.captionIndex))
+  if (filters.fileType) params.set('fileType', filters.fileType)
+  if (filters.dateFrom) params.set('dateFrom', filters.dateFrom)
+  if (filters.dateTo) params.set('dateTo', filters.dateTo)
+  if (filters.memoryDate) params.set('memoryDate', filters.memoryDate)
+  if (filters.album) params.set('album', filters.album)
+  if (filters.notInAlbum) params.set('notInAlbum', 'true')
+  if (options.includeSpatial && filters.lat !== undefined && filters.lng !== undefined) {
+    params.set('lat', String(filters.lat))
+    params.set('lng', String(filters.lng))
+    if (filters.radiusKm !== undefined) {
+      params.set('radiusKm', String(filters.radiusKm))
+    }
+  }
+}
+
 const extractErrorMessage = async (response: Response): Promise<string> => {
   try {
     const payload = (await response.json()) as { statusMessage?: string; message?: string }
@@ -134,23 +158,7 @@ export const usePhotosphereApi = () => {
       lang: preferredLang.value,
     })
     if (options.sort) params.set('sort', options.sort)
-    if (filters.q) params.set('q', filters.q)
-    if (filters.searchField) params.set('searchField', filters.searchField)
-    if (filters.labelIndex !== undefined) params.set('labelIndex', String(filters.labelIndex))
-    if (filters.captionIndex !== undefined) params.set('captionIndex', String(filters.captionIndex))
-    if (filters.fileType) params.set('fileType', filters.fileType)
-    if (filters.dateFrom) params.set('dateFrom', filters.dateFrom)
-    if (filters.dateTo) params.set('dateTo', filters.dateTo)
-    if (filters.memoryDate) params.set('memoryDate', filters.memoryDate)
-    if (filters.album) params.set('album', filters.album)
-    if (filters.notInAlbum) params.set('notInAlbum', 'true')
-    if (filters.lat !== undefined && filters.lng !== undefined) {
-      params.set('lat', String(filters.lat))
-      params.set('lng', String(filters.lng))
-      if (filters.radiusKm !== undefined) {
-        params.set('radiusKm', String(filters.radiusKm))
-      }
-    }
+    appendGalleryFilterParams(params, filters, { includeSpatial: true })
     return await requestJson<PaginatedResponse<MediaGridItem>>(`${API_ENDPOINTS.files}?${params}`, {
       signal: options.signal,
     })
@@ -170,16 +178,7 @@ export const usePhotosphereApi = () => {
       mode: queryParams.mode,
       lang: preferredLang.value,
     })
-    if (filters.q) params.set('q', filters.q)
-    if (filters.searchField) params.set('searchField', filters.searchField)
-    if (filters.labelIndex !== undefined) params.set('labelIndex', String(filters.labelIndex))
-    if (filters.captionIndex !== undefined) params.set('captionIndex', String(filters.captionIndex))
-    if (filters.fileType) params.set('fileType', filters.fileType)
-    if (filters.dateFrom) params.set('dateFrom', filters.dateFrom)
-    if (filters.dateTo) params.set('dateTo', filters.dateTo)
-    if (filters.memoryDate) params.set('memoryDate', filters.memoryDate)
-    if (filters.album) params.set('album', filters.album)
-    if (filters.notInAlbum) params.set('notInAlbum', 'true')
+    appendGalleryFilterParams(params, filters, { includeSpatial: false })
 
     return await requestJson<HeatmapApiResponse>(`${API_ENDPOINTS.mapHeatmap}?${params}`, {
       signal,

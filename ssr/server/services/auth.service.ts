@@ -1,18 +1,25 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { createError } from 'h3'
 import { getAuth, type DecodedIdToken } from 'firebase-admin/auth'
+import { normalizeAllowedEmails } from '#shared/constants'
+import type { AuthUser } from '../types/auth'
 import {
   ensureFirebaseAdminInitialized,
   hasFirebaseAdminCredentials,
 } from './firebase-admin.service'
 import { logger } from './logger.service'
-import type { AuthUser } from '../types/auth'
 
+export { normalizeAllowedEmails }
 export type VerifyTokenFn = (idToken: string) => Promise<DecodedIdToken>
 
 export const MEDIA_COOKIE_NAME = '__ps_media'
+const SESSION_SECRET_FILENAME = '.session-secret'
 
 const FALLBACK_SESSION_SECRET = randomBytes(32).toString('hex')
+const diskSecretCache = new Map<string, string>()
+let warnedEphemeralSecret = false
 
 interface MediaSessionPayload {
   uid: string
@@ -24,17 +31,85 @@ interface MediaSessionPayload {
   picture?: string
 }
 
-const resolveSessionSecret = (secret?: string): string => {
-  const candidate = (secret || process.env.PHOTOSPHERE_SESSION_SECRET || '').trim()
-  return candidate || FALLBACK_SESSION_SECRET
+export const resolveSessionSecret = (secret?: string, mountedVolumePath?: string): string => {
+  const explicit = (secret || process.env.PHOTOSPHERE_SESSION_SECRET || '').trim()
+  if (explicit) {
+    return explicit
+  }
+
+  const volPath = (mountedVolumePath || process.env.PHOTOSPHERE_MOUNTED_VOLUME_PATH || '').trim()
+  if (volPath) {
+    const cached = diskSecretCache.get(volPath)
+    if (cached) {
+      return cached
+    }
+    const secretFilePath = resolve(volPath, SESSION_SECRET_FILENAME)
+    try {
+      if (existsSync(secretFilePath)) {
+        const stored = readFileSync(secretFilePath, 'utf-8').trim()
+        if (stored.length >= 32) {
+          diskSecretCache.set(volPath, stored)
+          return stored
+        }
+      }
+      mkdirSync(volPath, { recursive: true })
+      const generated = randomBytes(32).toString('hex')
+      try {
+        writeFileSync(secretFilePath, generated, { flag: 'wx', mode: 0o600 })
+        diskSecretCache.set(volPath, generated)
+        return generated
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
+          const existing = readFileSync(secretFilePath, 'utf-8').trim()
+          if (existing.length >= 32) {
+            diskSecretCache.set(volPath, existing)
+            return existing
+          }
+        }
+      }
+    } catch (error) {
+      logger.warn(
+        { err: error instanceof Error ? error.message : String(error) },
+        'session_secret_disk_persist_failed'
+      )
+    }
+  }
+
+  if (process.env.NODE_ENV === 'production' && !warnedEphemeralSecret) {
+    warnedEphemeralSecret = true
+    logger.warn(
+      'PHOTOSPHERE_SESSION_SECRET is unset and no writable mountedVolumePath was available; using an ephemeral per-process secret'
+    )
+  }
+  return FALLBACK_SESSION_SECRET
 }
 
-export const normalizeAllowedEmails = (allowed: string[] | string | undefined): string[] => {
-  if (!allowed) {
-    return []
+export const resolveMediaSessionMaxAge = (idToken: string, maxAgeSeconds = 3600): number => {
+  const parts = idToken.split('.')
+  if (parts.length !== 3) {
+    return maxAgeSeconds
   }
-  const items = Array.isArray(allowed) ? allowed : allowed.split(',')
-  return items.map((email) => email.trim().toLowerCase()).filter(Boolean)
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1]!, 'base64url').toString('utf-8')) as {
+      exp?: unknown
+    }
+    if (typeof payload?.exp === 'number' && Number.isFinite(payload.exp)) {
+      const remaining = Math.floor(payload.exp) - Math.floor(Date.now() / 1000)
+      if (remaining <= 0) {
+        throw createError({
+          statusCode: 401,
+          statusMessage: 'Unauthorized: Firebase ID token expired',
+        })
+      }
+      return Math.min(maxAgeSeconds, remaining)
+    }
+  } catch (error) {
+    if ((error as { statusCode?: number }).statusCode === 401) {
+      throw error
+    }
+    // Non-JSON JWT segment falls back to default maxAgeSeconds
+  }
+  return maxAgeSeconds
 }
 
 export const extractBearerToken = (authHeader: string | undefined): string | null => {
@@ -135,7 +210,8 @@ export const createMediaSessionCookieValue = (
   user: AuthUser,
   idToken: string,
   secret?: string,
-  maxAgeSeconds = 3600
+  maxAgeSeconds = 3600,
+  mountedVolumePath?: string
 ): string => {
   const email = (user.email || '').trim().toLowerCase()
   if (!email || !user.uid || !idToken) {
@@ -154,14 +230,17 @@ export const createMediaSessionCookieValue = (
     ...(user.picture ? { picture: user.picture } : {}),
   }
   const encoded = Buffer.from(JSON.stringify(payload), 'utf-8').toString('base64url')
-  const sig = createHmac('sha256', resolveSessionSecret(secret)).update(encoded).digest('base64url')
+  const sig = createHmac('sha256', resolveSessionSecret(secret, mountedVolumePath))
+    .update(encoded)
+    .digest('base64url')
   return `${encoded}.${sig}`
 }
 
 export const verifyMediaSessionCookieValue = (
   cookieValue: string | undefined | null,
   allowedEmails: string[] | string | undefined,
-  secret?: string
+  secret?: string,
+  mountedVolumePath?: string
 ): { user: AuthUser; idToken: string } => {
   if (!cookieValue || typeof cookieValue !== 'string') {
     throw createError({
@@ -180,7 +259,9 @@ export const verifyMediaSessionCookieValue = (
 
   const encoded = cookieValue.slice(0, dotIdx)
   const sigB64 = cookieValue.slice(dotIdx + 1)
-  const expectedDigest = createHmac('sha256', resolveSessionSecret(secret)).update(encoded).digest()
+  const expectedDigest = createHmac('sha256', resolveSessionSecret(secret, mountedVolumePath))
+    .update(encoded)
+    .digest()
   const actualDigest = Buffer.from(sigB64, 'base64url')
 
   if (

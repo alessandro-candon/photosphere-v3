@@ -15,12 +15,12 @@ const authStore = useAuthStore()
 const { initialized, isAuthenticated } = storeToRefs(authStore)
 
 watch(
-  [initialized, isAuthenticated, () => route.path],
-  async ([isInit, isAuthed, path]) => {
+  [initialized, isAuthenticated],
+  async ([isInit, isAuthed]) => {
     if (!import.meta.client || !isInit) return
-    if (!isAuthed && path !== '/login') {
+    if (!isAuthed && route.path !== '/login') {
       await navigateTo('/login')
-    } else if (isAuthed && path === '/login') {
+    } else if (isAuthed && route.path === '/login') {
       await navigateTo('/')
     }
   },

@@ -277,4 +277,31 @@ describe('Writable Albums CRUD, Optimistic Concurrency & Rollback Safety', () =>
       )
     ).toEqual(['Milan 2024'])
   })
+
+  it('preserves GCS ifGenerationMatch across warm disk-cache restarts via .meta.json sidecar', async () => {
+    const { vol } = setupTestStorage()
+
+    // Prime disk cache and .meta.json sidecar
+    await albumsGetHandler(makeAlbumEvent('/api/albums'))
+    const metaRaw = JSON.parse(
+      readFileSync(resolve(vol, 'photosphere_albums.json.meta.json'), 'utf-8')
+    ) as { generation: string }
+    expect(metaRaw.generation).toBe('100')
+
+    // Simulate process restart by clearing in-memory cache while preserving disk files
+    invalidateAlbumsCache()
+
+    const patched = await albumPatchHandler(
+      makeAlbumEvent('/api/albums/Milan%202024', {
+        method: 'PATCH',
+        params: { albumName: 'Milan%202024' },
+        body: { newName: 'Milan Warm Restart' },
+      })
+    )
+    expect(patched.album?.name).toBe('Milan Warm Restart')
+    const updatedMeta = JSON.parse(
+      readFileSync(resolve(vol, 'photosphere_albums.json.meta.json'), 'utf-8')
+    ) as { generation: string }
+    expect(updatedMeta.generation).toBe('101')
+  })
 })

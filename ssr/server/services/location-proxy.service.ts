@@ -1,12 +1,9 @@
 import { createError, type H3Event } from 'h3'
+import type { LocationSearchResult } from '#shared/types'
+import { createAsyncMutex } from '../utils/async-mutex'
 import { getEventLogger } from './logger.service'
 
-export interface LocationSearchResultDto {
-  placeId: string
-  displayName: string
-  lat: number
-  lng: number
-}
+export type LocationSearchResultDto = LocationSearchResult
 
 interface CacheRecord {
   results: LocationSearchResultDto[]
@@ -27,12 +24,12 @@ const MAX_CACHE_ENTRIES = 200
 const CACHE_TTL_MS = 60 * 60 * 1000
 
 const locationCache = new Map<string, CacheRecord>()
-let rateLimitQueue: Promise<void> = Promise.resolve()
+let withRateLimitMutex = createAsyncMutex()
 let lastUpstreamCallAt = 0
 
 export const resetLocationProxyForTests = (): void => {
   locationCache.clear()
-  rateLimitQueue = Promise.resolve()
+  withRateLimitMutex = createAsyncMutex()
   lastUpstreamCallAt = 0
 }
 
@@ -44,14 +41,7 @@ const runWithRateLimit = async <T>(
   sleepFn: (ms: number) => Promise<void>,
   fn: () => Promise<T>
 ): Promise<T> => {
-  const prev = rateLimitQueue
-  let release!: () => void
-  rateLimitQueue = new Promise<void>((resolve) => {
-    release = resolve
-  })
-
-  await prev
-  try {
+  return await withRateLimitMutex(async () => {
     if (minIntervalMs > 0 && lastUpstreamCallAt > 0) {
       const elapsed = nowFn() - lastUpstreamCallAt
       if (elapsed < minIntervalMs) {
@@ -60,9 +50,7 @@ const runWithRateLimit = async <T>(
     }
     lastUpstreamCallAt = nowFn()
     return await fn()
-  } finally {
-    release()
-  }
+  })
 }
 
 export const searchNominatimLocations = async (

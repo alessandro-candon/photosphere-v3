@@ -128,17 +128,11 @@ import {
   HEATMAP_SETTINGS_UPDATED_EVENT,
   useMapSettings,
 } from '../composables/useMapSettings'
+import { useMediaLightbox } from '../composables/useMediaLightbox'
 import { usePhotosphereApi } from '../composables/usePhotosphereApi'
+import { useSearchAutocomplete } from '../composables/useSearchAutocomplete'
 import { useAuthStore } from '../stores/auth'
-import type {
-  BasemapStyle,
-  HeatmapDataMode,
-  LocationSearchResult,
-  MediaDetail,
-  MediaGridItem,
-  SearchFieldMode,
-  SearchSuggestion,
-} from '../types'
+import type { BasemapStyle, HeatmapDataMode, MediaGridItem } from '../types'
 
 const HEATMAP_GRADIENT: Record<number, string> = {
   0.2: '#2563eb',
@@ -154,16 +148,17 @@ const authStore = useAuthStore()
 const { canEditAlbums, isAuthenticated } = storeToRefs(authStore)
 const { settings, reloadMapSettings } = useMapSettings()
 const { filters, applyFilters, clearAllFilters } = useGalleryFilters()
-const { fetchHeatmapClusters, listFiles, getFileDetail, fetchSearchSuggestions, searchLocations } =
-  usePhotosphereApi()
+const { fetchHeatmapClusters, listFiles } = usePhotosphereApi()
+const {
+  suggestions,
+  locationResults,
+  locationLoading,
+  locationError,
+  handleSuggestionQuery,
+  handleLocationSearch,
+} = useSearchAutocomplete()
 
 const mapContainer = ref<HTMLElement | null>(null)
-
-// Search & location autocomplete state
-const suggestions = ref<SearchSuggestion[]>([])
-const locationResults = ref<LocationSearchResult[]>([])
-const locationLoading = ref(false)
-const locationError = ref('')
 
 // Heatmap stats & state
 const heatmapLoading = ref(false)
@@ -187,26 +182,6 @@ const inspectLoading = ref(false)
 const inspectLoadingMore = ref(false)
 const inspectError = ref('')
 const pinnedHash = ref<string | null>(null)
-
-// Lightbox state
-const activeIndex = ref<number | null>(null)
-const detailCache = ref<Record<string, MediaDetail>>({})
-const detailLoading = ref(false)
-
-const activeItem = computed<MediaGridItem | null>(() => {
-  if (activeIndex.value === null) return null
-  return inspectItems.value[activeIndex.value] ?? null
-})
-
-const activeDetail = computed<MediaDetail | null>(() => {
-  const item = activeItem.value
-  return item ? (detailCache.value[item.hash] ?? null) : null
-})
-
-const hasPrev = computed(() => activeIndex.value !== null && activeIndex.value > 0)
-const hasNext = computed(
-  () => activeIndex.value !== null && activeIndex.value < inspectItems.value.length - 1
-)
 
 const headerSubtitle = computed(() => {
   if (totalGeolocatedCount.value === 0) return 'Explore geolocated media across the globe'
@@ -362,7 +337,8 @@ const fetchInspectPage = async (page: number, append: boolean) => {
   if (inspectAbortController) {
     inspectAbortController.abort()
   }
-  inspectAbortController = new AbortController()
+  const controller = new AbortController()
+  inspectAbortController = controller
   if (append) {
     inspectLoadingMore.value = true
   } else {
@@ -382,9 +358,10 @@ const fetchInspectPage = async (page: number, append: boolean) => {
       settings.value.maxInspectResults,
       {
         sort: 'distance',
-        signal: inspectAbortController.signal,
+        signal: controller.signal,
       }
     )
+    if (inspectAbortController !== controller) return
 
     inspectItems.value = append ? [...inspectItems.value, ...res.items] : res.items
     inspectTotalCount.value = res.totalCount
@@ -394,18 +371,44 @@ const fetchInspectPage = async (page: number, append: boolean) => {
     if (error instanceof DOMException && error.name === 'AbortError') {
       return
     }
+    if (inspectAbortController !== controller) return
     inspectError.value = error instanceof Error ? error.message : 'Failed to inspect area'
   } finally {
-    inspectLoading.value = false
-    inspectLoadingMore.value = false
+    if (inspectAbortController === controller) {
+      inspectLoading.value = false
+      inspectLoadingMore.value = false
+      inspectAbortController = null
+    }
   }
 }
+
+const loadMoreInspect = async () => {
+  if (!inspectHasMore.value || inspectLoadingMore.value) return
+  await fetchInspectPage(inspectPage.value + 1, true)
+}
+
+const {
+  activeItem,
+  activeDetail,
+  detailLoading,
+  hasPrev,
+  hasNext,
+  openLightbox,
+  closeLightbox,
+  prevItem,
+  nextItem,
+} = useMediaLightbox({
+  items: inspectItems,
+  hasMore: inspectHasMore,
+  loadMore: loadMoreInspect,
+})
 
 const handleMapClick = (e: LeafletTypes.LeafletMouseEvent) => {
   if (!mapInstance || !L) return
   const zoom = mapInstance.getZoom()
   const radiusKm = computeInspectRadiusKm(zoom)
 
+  closeLightbox()
   inspectLat.value = e.latlng.lat
   inspectLng.value = e.latlng.lng
   inspectRadiusKm.value = radiusKm
@@ -445,11 +448,6 @@ const retryInspect = () => {
   void fetchInspectPage(1, false)
 }
 
-const loadMoreInspect = () => {
-  if (!inspectHasMore.value || inspectLoadingMore.value) return
-  void fetchInspectPage(inspectPage.value + 1, true)
-}
-
 const pinItemOnMap = (item: MediaGridItem) => {
   if (!mapInstance || !L || item.latitude === null || item.longitude === null) return
   pinnedHash.value = item.hash
@@ -473,68 +471,6 @@ const pinItemOnMap = (item: MediaGridItem) => {
 
   pinMarker.openTooltip()
   mapInstance.panTo([item.latitude, item.longitude], { animate: true })
-}
-
-// Lightbox navigation & detail loading
-const loadDetailIfNeeded = async (hash: string) => {
-  if (detailCache.value[hash]) return
-  detailLoading.value = true
-  try {
-    const detail = await getFileDetail(hash)
-    detailCache.value = { ...detailCache.value, [hash]: detail }
-  } catch {
-    // Keep lightbox usable with grid item metadata
-  } finally {
-    detailLoading.value = false
-  }
-}
-
-const openLightbox = (index: number) => {
-  activeIndex.value = index
-  const item = inspectItems.value[index]
-  if (item) {
-    void loadDetailIfNeeded(item.hash)
-  }
-}
-
-const closeLightbox = () => {
-  activeIndex.value = null
-}
-
-const prevItem = () => {
-  if (!hasPrev.value || activeIndex.value === null) return
-  openLightbox(activeIndex.value - 1)
-}
-
-const nextItem = () => {
-  if (!hasNext.value || activeIndex.value === null) return
-  openLightbox(activeIndex.value + 1)
-}
-
-const handleSuggestionQuery = async ({ q, field }: { q: string; field: SearchFieldMode }) => {
-  if (!q.trim()) {
-    suggestions.value = []
-    return
-  }
-  try {
-    suggestions.value = await fetchSearchSuggestions(q, field, 10)
-  } catch {
-    suggestions.value = []
-  }
-}
-
-const handleLocationSearch = async (q: string) => {
-  locationLoading.value = true
-  locationError.value = ''
-  try {
-    locationResults.value = await searchLocations(q)
-  } catch (error) {
-    locationResults.value = []
-    locationError.value =
-      error instanceof Error ? error.message : 'Failed to search location via OpenStreetMap'
-  } finally {
-    locationLoading.value = false
-  }
 }
 
 const handleExternalSettingsEvent = () => {
@@ -654,6 +590,7 @@ watch(
     }
     triggerHeatmapFetch(true)
     if (inspectOpen.value) {
+      closeLightbox()
       void fetchInspectPage(1, false)
     }
   },

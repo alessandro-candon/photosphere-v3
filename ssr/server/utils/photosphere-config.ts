@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { homedir } from 'node:os'
+import { join, resolve } from 'node:path'
 
 export type StorageClass = 'STANDARD' | 'ARCHIVE'
 
@@ -36,6 +37,16 @@ export interface PhotosphereConfig {
 const DEFAULT_CONFIG_FILENAME = 'photosphere.config.json'
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
+const expandUserPath = (rawPath: string): string => {
+  if (rawPath === '~') {
+    return homedir()
+  }
+  if (rawPath.startsWith('~/') || rawPath.startsWith('~\\')) {
+    return join(homedir(), rawPath.slice(2))
+  }
+  return rawPath
+}
+
 const assertRecord = (value: unknown, label: string): Record<string, unknown> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`Invalid photosphere.config.json: '${label}' must be an object.`)
@@ -66,18 +77,35 @@ export const isOfflineTestOrTypecheck = (): boolean =>
     process.argv.some((arg) => arg === 'typecheck' || arg === 'prepare')
   )
 
+export const isBuildWithoutConfig = (): boolean => process.env.PHOTOSPHERE_SKIP_BUILD_CONFIG === '1'
+
 export const resolvePhotosphereConfigPath = (explicitPath?: string): string | null => {
-  const candidates: string[] = []
   if (explicitPath) {
-    candidates.push(resolve(explicitPath))
-  } else if (process.env.PHOTOSPHERE_CONFIG_PATH) {
-    candidates.push(resolve(process.env.PHOTOSPHERE_CONFIG_PATH))
-  } else {
-    candidates.push(
-      resolve(process.cwd(), DEFAULT_CONFIG_FILENAME),
-      resolve(process.cwd(), '..', DEFAULT_CONFIG_FILENAME)
-    )
+    const resolved = resolve(expandUserPath(explicitPath))
+    if (!existsSync(resolved)) {
+      throw new Error(
+        `Missing photosphere.config.json at explicit path: ${resolved}. Run \`make init\` or \`photosphere init\` to provision.`
+      )
+    }
+    return resolved
   }
+
+  if (process.env.PHOTOSPHERE_CONFIG_PATH) {
+    const resolved = resolve(expandUserPath(process.env.PHOTOSPHERE_CONFIG_PATH))
+    if (!existsSync(resolved)) {
+      throw new Error(
+        `Missing photosphere.config.json at PHOTOSPHERE_CONFIG_PATH (${resolved}). Run \`make init\` or \`photosphere init\` to provision.`
+      )
+    }
+    return resolved
+  }
+
+  const candidates = [
+    resolve(process.cwd(), DEFAULT_CONFIG_FILENAME),
+    resolve(process.cwd(), '..', DEFAULT_CONFIG_FILENAME),
+    resolve(homedir(), '.photosphere', DEFAULT_CONFIG_FILENAME),
+  ]
+
   for (const candidate of candidates) {
     if (existsSync(candidate)) {
       return candidate

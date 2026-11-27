@@ -1,0 +1,99 @@
+{
+  "nodes": [
+    {
+      "id": "walls_of_dubrovnik_3_jpg",
+      "label": "Walls_of_Dubrovnik-3.jpg",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    },
+    {
+      "id": "walls_of_dubrovnik",
+      "label": "Walls of Dubrovnik",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    },
+    {
+      "id": "square_fortress_tower",
+      "label": "Square Crenellated Fortress Tower",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    },
+    {
+      "id": "minceta_tower",
+      "label": "Minceta Tower (Round Bastion)",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    },
+    {
+      "id": "bartizan_turret",
+      "label": "Bartizan Sentry Turret",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    },
+    {
+      "id": "parking_lot",
+      "label": "Parking Lot with Cars",
+      "file_type": "image",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    },
+    {
+      "id": "dubrovnik_croatia",
+      "label": "Dubrovnik, Croatia",
+      "file_type": "concept",
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    }
+  ],
+  "edges": [
+    {
+      "source": "walls_of_dubrovnik_3_jpg",
+      "target": "walls_of_dubrovnik",
+      "relation": "depicts",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    },
+    {
+      "source": "walls_of_dubrovnik",
+      "target": "square_fortress_tower",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    },
+    {
+      "source": "walls_of_dubrovnik",
+      "target": "minceta_tower",
+      "relation": "contains",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    },
+    {
+      "source": "walls_of_dubrovnik",
+      "target": "bartizan_turret",
+      "relation": "features",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    },
+    {
+      "source": "parking_lot",
+      "target": "walls_of_dubrovnik",
+      "relation": "adjacent_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    },
+    {
+      "source": "walls_of_dubrovnik",
+      "target": "dubrovnik_croatia",
+      "relation": "located_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/ubuntu/dev/photosphere-v3/resources/original_images/Walls_of_Dubrovnik-3.jpg"
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

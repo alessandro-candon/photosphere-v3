@@ -91,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref } from 'vue'
+import { onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import EmptyState from '../components/common/EmptyState.vue'
 import ErrorBanner from '../components/common/ErrorBanner.vue'
@@ -105,48 +105,23 @@ import Button from '../components/ui/Button.vue'
 import { useAlbumPicker } from '../composables/useAlbumPicker'
 import { useGalleryFilters } from '../composables/useGalleryFilters'
 import { useMediaFeed } from '../composables/useMediaFeed'
-import { usePhotosphereApi } from '../composables/usePhotosphereApi'
+import { useSearchAutocomplete } from '../composables/useSearchAutocomplete'
 import { useAuthStore } from '../stores/auth'
 import { useSelectionStore } from '../stores/selection'
-import type { LocationSearchResult, SearchFieldMode, SearchSuggestion } from '../types'
 
 const authStore = useAuthStore()
 const selectionStore = useSelectionStore()
 const { canEditAlbums } = storeToRefs(authStore)
 const { selecting, selectedHashes, selectedCount, selectedList } = storeToRefs(selectionStore)
-const { fetchSearchSuggestions, searchLocations } = usePhotosphereApi()
 const { filters, applyFilters, clearAllFilters } = useGalleryFilters()
-
-const suggestions = ref<SearchSuggestion[]>([])
-const locationResults = ref<LocationSearchResult[]>([])
-const locationLoading = ref(false)
-const locationError = ref('')
-
-const handleSuggestionQuery = async ({ q, field }: { q: string; field: SearchFieldMode }) => {
-  if (!q.trim()) {
-    suggestions.value = []
-    return
-  }
-  try {
-    suggestions.value = await fetchSearchSuggestions(q, field, 10)
-  } catch {
-    suggestions.value = []
-  }
-}
-
-const handleLocationSearch = async (q: string) => {
-  locationLoading.value = true
-  locationError.value = ''
-  try {
-    locationResults.value = await searchLocations(q)
-  } catch (error) {
-    locationResults.value = []
-    locationError.value =
-      error instanceof Error ? error.message : 'Failed to search location via OpenStreetMap'
-  } finally {
-    locationLoading.value = false
-  }
-}
+const {
+  suggestions,
+  locationResults,
+  locationLoading,
+  locationError,
+  handleSuggestionQuery,
+  handleLocationSearch,
+} = useSearchAutocomplete()
 
 const {
   items,

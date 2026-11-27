@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -10,6 +10,7 @@ import {
 import {
   applyConfigToProcessEnv,
   loadPhotosphereConfig,
+  resolvePhotosphereConfigPath,
   validatePhotosphereConfig,
 } from '../../server/utils/photosphere-config'
 import {
@@ -191,5 +192,83 @@ describe('v3 JSON Database Contract Parity', () => {
         process.env.PHOTOSPHERE_DATA_BUCKET = prevData
       }
     }
+  })
+
+  it('resolves ~/.photosphere/photosphere.config.json, expands ~/, and enforces infra/cli template parity', () => {
+    const fakeHome = mkdtempSync(resolve(tmpdir(), 'ps-home-'))
+    tempDirs.push(fakeHome)
+    const psDir = resolve(fakeHome, '.photosphere')
+    mkdirSync(psDir, { recursive: true })
+    const cfgRaw = readFileSync(
+      resolve(CONTRACTS_FIXTURES_DIR, 'valid_photosphere_config.json'),
+      'utf-8'
+    )
+    const homeCfgPath = resolve(psDir, 'photosphere.config.json')
+    writeFileSync(homeCfgPath, cfgRaw)
+
+    const prevHome = process.env.HOME
+    const prevCfgPath = process.env.PHOTOSPHERE_CONFIG_PATH
+    try {
+      process.env.HOME = fakeHome
+      delete process.env.PHOTOSPHERE_CONFIG_PATH
+      expect(resolvePhotosphereConfigPath('~/.photosphere/photosphere.config.json')).toBe(
+        homeCfgPath
+      )
+      process.env.PHOTOSPHERE_CONFIG_PATH = '~/.photosphere/photosphere.config.json'
+      expect(resolvePhotosphereConfigPath()).toBe(homeCfgPath)
+    } finally {
+      if (prevHome === undefined) delete process.env.HOME
+      else process.env.HOME = prevHome
+      if (prevCfgPath === undefined) delete process.env.PHOTOSPHERE_CONFIG_PATH
+      else process.env.PHOTOSPHERE_CONFIG_PATH = prevCfgPath
+    }
+
+    const infraDir = resolve(__dirname, '../../../infra')
+    const cliTemplatesDir = resolve(__dirname, '../../../cli/src/photosphere/init/templates')
+    for (const fileName of ['storage.rules', 'cors.json']) {
+      expect(readFileSync(resolve(infraDir, fileName), 'utf-8')).toBe(
+        readFileSync(resolve(cliTemplatesDir, fileName), 'utf-8')
+      )
+    }
+  })
+
+  it('coalesces concurrent getMediaDatabase calls via single-flight and recovers after failure', async () => {
+    const vol = mkdtempSync(resolve(tmpdir(), 'ps-sf-'))
+    tempDirs.push(vol)
+    const validDbRaw = readFileSync(resolve(CONTRACTS_FIXTURES_DIR, 'valid_media_db.json'), 'utf-8')
+
+    let failNext = true
+    const fetchMock = vi.fn(async () => {
+      if (failNext) {
+        return new Response('boom', { status: 502 })
+      }
+      return new Response(validDbRaw, { status: 200 })
+    }) as unknown as typeof fetch
+
+    await expect(
+      Promise.all([
+        getMediaDatabase('tok', {
+          dataBucket: 'bkt',
+          mountedVolumePath: vol,
+          fetchImpl: fetchMock,
+        }),
+        getMediaDatabase('tok', {
+          dataBucket: 'bkt',
+          mountedVolumePath: vol,
+          fetchImpl: fetchMock,
+        }),
+      ])
+    ).rejects.toMatchObject({ statusCode: 502 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    failNext = false
+    const [s1, s2, s3] = await Promise.all([
+      getMediaDatabase('tok', { dataBucket: 'bkt', mountedVolumePath: vol, fetchImpl: fetchMock }),
+      getMediaDatabase('tok', { dataBucket: 'bkt', mountedVolumePath: vol, fetchImpl: fetchMock }),
+      getMediaDatabase('tok', { dataBucket: 'bkt', mountedVolumePath: vol, fetchImpl: fetchMock }),
+    ])
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(s1).toBe(s2)
+    expect(s2).toBe(s3)
   })
 })

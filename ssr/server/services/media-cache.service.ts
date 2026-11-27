@@ -1,13 +1,14 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
+import { mkdir, open, readdir, readFile, rm, stat } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { createError, getHeader, setHeader, setResponseStatus, type H3Event } from 'h3'
-import { getEventLogger } from './logger.service'
 import type { MediaFileType } from '../types/cache'
+import { createSingleFlight } from '../utils/async-mutex'
 import {
   downloadMediaObject,
-  writeFileAtomic,
+  writeFileAtomicAsync,
   type StorageOptions,
 } from '../utils/storage-download'
+import { getEventLogger } from './logger.service'
 
 export type MediaVariant = 'thumbnail' | 'source'
 
@@ -38,9 +39,11 @@ export interface ServeMediaInput {
 }
 
 const cacheStateByDir = new Map<string, CacheDirState>()
+const hydrationSingleFlight = createSingleFlight<string, CacheDirState>()
 
 export const resetMediaLruCacheForTests = (): void => {
   cacheStateByDir.clear()
+  hydrationSingleFlight.clear()
 }
 
 const EXTENSION_MIME_MAP: Record<string, string> = {
@@ -72,66 +75,75 @@ export const inferMediaContentType = (gsUri: string, upstreamType?: string | nul
   return cleanUpstream || 'application/octet-stream'
 }
 
-const getCacheState = (cacheDir: string): CacheDirState => {
-  let state = cacheStateByDir.get(cacheDir)
-  if (state?.hydrated) {
-    return state
+const getCacheState = async (cacheDir: string): Promise<CacheDirState> => {
+  const existing = cacheStateByDir.get(cacheDir)
+  if (existing?.hydrated) {
+    return existing
   }
 
-  mkdirSync(cacheDir, { recursive: true })
-  const entries = new Map<string, LruEntry>()
-  let totalBytes = 0
-
-  const dirFiles = readdirSync(cacheDir)
-  const diskItems: { entry: LruEntry; mtimeMs: number }[] = []
-
-  for (const name of dirFiles) {
-    if (!name.endsWith('.bin')) continue
-    const base = name.slice(0, -4)
-    const dotIdx = base.indexOf('.')
-    if (dotIdx <= 0) continue
-    const hash = base.slice(0, dotIdx)
-    const variant = base.slice(dotIdx + 1)
-    const key = `${hash}:${variant}`
-    const dataPath = resolve(cacheDir, name)
-    const metaPath = resolve(cacheDir, `${base}.json`)
-
-    try {
-      const stats = statSync(dataPath)
-      let contentType = 'application/octet-stream'
-      if (existsSync(metaPath)) {
-        const parsedMeta = JSON.parse(readFileSync(metaPath, 'utf-8')) as {
-          contentType?: string
-        }
-        if (parsedMeta.contentType) {
-          contentType = parsedMeta.contentType
-        }
-      }
-      diskItems.push({
-        entry: {
-          key,
-          dataPath,
-          metaPath,
-          sizeBytes: stats.size,
-          contentType,
-        },
-        mtimeMs: stats.mtimeMs,
-      })
-    } catch {
-      // Ignore unreadable partial cache entry
+  return await hydrationSingleFlight.run(cacheDir, async () => {
+    const rechecked = cacheStateByDir.get(cacheDir)
+    if (rechecked?.hydrated) {
+      return rechecked
     }
-  }
 
-  // Sort oldest -> newest so Map insertion order matches LRU eviction order
-  diskItems.sort((a, b) => a.mtimeMs - b.mtimeMs)
-  for (const item of diskItems) {
-    entries.set(item.entry.key, item.entry)
-    totalBytes += item.entry.sizeBytes
-  }
+    await mkdir(cacheDir, { recursive: true })
+    const entries = new Map<string, LruEntry>()
+    let totalBytes = 0
 
-  state = { hydrated: true, totalBytes, entries }
-  cacheStateByDir.set(cacheDir, state)
-  return state
+    const dirFiles = await readdir(cacheDir)
+    const diskItems: { entry: LruEntry; mtimeMs: number }[] = []
+
+    for (const name of dirFiles) {
+      if (!name.endsWith('.bin')) continue
+      const base = name.slice(0, -4)
+      const dotIdx = base.indexOf('.')
+      if (dotIdx <= 0) continue
+      const hash = base.slice(0, dotIdx)
+      const variant = base.slice(dotIdx + 1)
+      const key = `${hash}:${variant}`
+      const dataPath = resolve(cacheDir, name)
+      const metaPath = resolve(cacheDir, `${base}.json`)
+
+      try {
+        const stats = await stat(dataPath)
+        let contentType = 'application/octet-stream'
+        try {
+          const parsedMeta = JSON.parse(await readFile(metaPath, 'utf-8')) as {
+            contentType?: string
+          }
+          if (parsedMeta.contentType) {
+            contentType = parsedMeta.contentType
+          }
+        } catch {
+          // Missing or unreadable metadata sidecar falls back to default content type
+        }
+        diskItems.push({
+          entry: {
+            key,
+            dataPath,
+            metaPath,
+            sizeBytes: stats.size,
+            contentType,
+          },
+          mtimeMs: stats.mtimeMs,
+        })
+      } catch {
+        // Ignore unreadable partial cache entry
+      }
+    }
+
+    // Sort oldest -> newest so Map insertion order matches LRU eviction order
+    diskItems.sort((a, b) => a.mtimeMs - b.mtimeMs)
+    for (const item of diskItems) {
+      entries.set(item.entry.key, item.entry)
+      totalBytes += item.entry.sizeBytes
+    }
+
+    const state: CacheDirState = { hydrated: true, totalBytes, entries }
+    cacheStateByDir.set(cacheDir, state)
+    return state
+  })
 }
 
 const touchEntry = (state: CacheDirState, entry: LruEntry): void => {
@@ -139,18 +151,19 @@ const touchEntry = (state: CacheDirState, entry: LruEntry): void => {
   state.entries.set(entry.key, entry)
 }
 
-const evictIfNeeded = (
+const evictIfNeeded = async (
   state: CacheDirState,
   maxCacheBytes: number,
   protectedKey: string,
   event: H3Event
-): void => {
+): Promise<void> => {
   if (state.totalBytes <= maxCacheBytes) {
     return
   }
 
   let evictedCount = 0
   let reclaimedBytes = 0
+  const pathsToRemove: string[] = []
 
   for (const [key, entry] of state.entries) {
     if (state.totalBytes <= maxCacheBytes) {
@@ -163,8 +176,11 @@ const evictIfNeeded = (
     state.totalBytes = Math.max(0, state.totalBytes - entry.sizeBytes)
     reclaimedBytes += entry.sizeBytes
     evictedCount += 1
-    rmSync(entry.dataPath, { force: true })
-    rmSync(entry.metaPath, { force: true })
+    pathsToRemove.push(entry.dataPath, entry.metaPath)
+  }
+
+  if (pathsToRemove.length > 0) {
+    await Promise.all(pathsToRemove.map((filePath) => rm(filePath, { force: true })))
   }
 
   if (evictedCount > 0) {
@@ -183,6 +199,9 @@ export const parseByteRange = (
   rangeHeader: string,
   totalSize: number
 ): { start: number; end: number } | null => {
+  if (!Number.isFinite(totalSize) || totalSize <= 0) {
+    return null
+  }
   const match = /^bytes=(\d*)-(\d*)$/i.exec(rangeHeader.trim())
   if (!match) return null
 
@@ -207,7 +226,26 @@ export const parseByteRange = (
   return { start, end: clampedEnd }
 }
 
-const storeInDiskCache = (
+const readFileSlice = async (filePath: string, start: number, end: number): Promise<Uint8Array> => {
+  const length = end - start + 1
+  const buffer = Buffer.allocUnsafe(length)
+  const handle = await open(filePath, 'r')
+  try {
+    let offset = 0
+    while (offset < length) {
+      const { bytesRead } = await handle.read(buffer, offset, length - offset, start + offset)
+      if (bytesRead === 0) {
+        break
+      }
+      offset += bytesRead
+    }
+    return offset === length ? buffer : buffer.subarray(0, offset)
+  } finally {
+    await handle.close()
+  }
+}
+
+const storeInDiskCache = async (
   event: H3Event,
   state: CacheDirState,
   cacheDir: string,
@@ -216,7 +254,7 @@ const storeInDiskCache = (
   data: Uint8Array,
   contentType: string,
   maxCacheBytes: number
-): boolean => {
+): Promise<boolean> => {
   if (data.byteLength > maxCacheBytes) {
     return false
   }
@@ -225,14 +263,15 @@ const storeInDiskCache = (
   const dataPath = resolve(cacheDir, `${baseName}.bin`)
   const metaPath = resolve(cacheDir, `${baseName}.json`)
 
+  await writeFileAtomicAsync(dataPath, data)
+  await writeFileAtomicAsync(metaPath, JSON.stringify({ contentType }))
+
+  // Update LRU accounting synchronously after async writes so concurrent cold misses never double-count
   const existing = state.entries.get(key)
   if (existing) {
     state.totalBytes = Math.max(0, state.totalBytes - existing.sizeBytes)
     state.entries.delete(key)
   }
-
-  writeFileAtomic(dataPath, data)
-  writeFileAtomic(metaPath, JSON.stringify({ contentType }))
 
   const entry: LruEntry = {
     key,
@@ -244,8 +283,15 @@ const storeInDiskCache = (
   state.entries.set(key, entry)
   state.totalBytes += entry.sizeBytes
 
-  evictIfNeeded(state, maxCacheBytes, key, event)
+  await evictIfNeeded(state, maxCacheBytes, key, event)
   return true
+}
+
+const applyCommonMediaHeaders = (event: H3Event, contentType: string, etag: string): void => {
+  setHeader(event, 'Cache-Control', 'private, max-age=31536000, immutable')
+  setHeader(event, 'ETag', etag)
+  setHeader(event, 'Accept-Ranges', 'bytes')
+  setHeader(event, 'Content-Type', contentType)
 }
 
 const sendMediaResponse = (
@@ -254,11 +300,8 @@ const sendMediaResponse = (
   contentType: string,
   etag: string,
   rangeHeader?: string
-): { statusCode: number; byteLength: number } => {
-  setHeader(event, 'Cache-Control', 'private, max-age=31536000, immutable')
-  setHeader(event, 'ETag', etag)
-  setHeader(event, 'Accept-Ranges', 'bytes')
-  setHeader(event, 'Content-Type', contentType)
+): { statusCode: number; byteLength: number; body: Uint8Array } => {
+  applyCommonMediaHeaders(event, contentType, etag)
 
   if (rangeHeader) {
     const parsed = parseByteRange(rangeHeader, bytes.byteLength)
@@ -273,12 +316,12 @@ const sendMediaResponse = (
     setResponseStatus(event, 206)
     setHeader(event, 'Content-Range', `bytes ${parsed.start}-${parsed.end}/${bytes.byteLength}`)
     setHeader(event, 'Content-Length', slice.byteLength)
-    return { statusCode: 206, byteLength: slice.byteLength }
+    return { statusCode: 206, byteLength: slice.byteLength, body: slice }
   }
 
   setResponseStatus(event, 200)
   setHeader(event, 'Content-Length', bytes.byteLength)
-  return { statusCode: 200, byteLength: bytes.byteLength }
+  return { statusCode: 200, byteLength: bytes.byteLength, body: bytes }
 }
 
 export const serveMediaFromCache = async (
@@ -308,29 +351,62 @@ export const serveMediaFromCache = async (
 
   const rangeHeader = getHeader(event, 'range')
   const isRangeRequest = Boolean(rangeHeader)
-  const state = getCacheState(mediaCacheDir)
+  const state = await getCacheState(mediaCacheDir)
   const key = `${hash}:${variant}`
   const cachedEntry = state.entries.get(key)
 
-  if (cachedEntry && existsSync(cachedEntry.dataPath)) {
-    const fullBytes = new Uint8Array(readFileSync(cachedEntry.dataPath))
-    touchEntry(state, cachedEntry)
-    const sent = sendMediaResponse(event, fullBytes, cachedEntry.contentType, etag, rangeHeader)
-    getEventLogger(event).debug(
-      {
-        hash,
-        variant,
-        bytes: sent.byteLength,
-        isRangeRequest,
-        statusCode: sent.statusCode,
-      },
-      'media_cache_hit'
-    )
-    if (sent.statusCode === 206 && rangeHeader) {
-      const parsed = parseByteRange(rangeHeader, fullBytes.byteLength)!
-      return fullBytes.subarray(parsed.start, parsed.end + 1)
+  if (cachedEntry) {
+    const parsedRange = rangeHeader ? parseByteRange(rangeHeader, cachedEntry.sizeBytes) : null
+    if (rangeHeader && !parsedRange) {
+      applyCommonMediaHeaders(event, cachedEntry.contentType, etag)
+      setHeader(event, 'Content-Range', `bytes */${cachedEntry.sizeBytes}`)
+      throw createError({
+        statusCode: 416,
+        statusMessage: 'Range Not Satisfiable',
+      })
     }
-    return fullBytes
+
+    try {
+      const body = parsedRange
+        ? await readFileSlice(cachedEntry.dataPath, parsedRange.start, parsedRange.end)
+        : new Uint8Array(await readFile(cachedEntry.dataPath))
+
+      touchEntry(state, cachedEntry)
+      applyCommonMediaHeaders(event, cachedEntry.contentType, etag)
+      if (parsedRange) {
+        setResponseStatus(event, 206)
+        setHeader(
+          event,
+          'Content-Range',
+          `bytes ${parsedRange.start}-${parsedRange.end}/${cachedEntry.sizeBytes}`
+        )
+        setHeader(event, 'Content-Length', body.byteLength)
+      } else {
+        setResponseStatus(event, 200)
+        setHeader(event, 'Content-Length', body.byteLength)
+      }
+
+      const statusCode = parsedRange ? 206 : 200
+      getEventLogger(event).debug(
+        {
+          hash,
+          variant,
+          bytes: body.byteLength,
+          isRangeRequest,
+          statusCode,
+        },
+        'media_cache_hit'
+      )
+      return body
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        // Evicted concurrently on disk; clean up stale entry and fall through to GCS fetch
+        state.entries.delete(key)
+        state.totalBytes = Math.max(0, state.totalBytes - cachedEntry.sizeBytes)
+      } else {
+        throw error
+      }
+    }
   }
 
   const startMs = Date.now()
@@ -365,10 +441,7 @@ export const serveMediaFromCache = async (
     // Range pass-through when upstream returned a partial chunk of a larger/un-cached object
     if (!fullObjectDelivered && upstream.status === 206 && upstream.contentRange) {
       setResponseStatus(event, 206)
-      setHeader(event, 'Cache-Control', 'private, max-age=31536000, immutable')
-      setHeader(event, 'ETag', etag)
-      setHeader(event, 'Accept-Ranges', 'bytes')
-      setHeader(event, 'Content-Type', contentType)
+      applyCommonMediaHeaders(event, contentType, etag)
       setHeader(event, 'Content-Range', upstream.contentRange)
       setHeader(event, 'Content-Length', upstream.body.byteLength)
 
@@ -390,7 +463,7 @@ export const serveMediaFromCache = async (
     const withinVideoBudget =
       fileType !== 'VIDEO' || upstream.body.byteLength <= maxCacheableVideoBytes
     const cached = withinVideoBudget
-      ? storeInDiskCache(
+      ? await storeInDiskCache(
           event,
           state,
           mediaCacheDir,
@@ -416,11 +489,7 @@ export const serveMediaFromCache = async (
       'media_cache_miss'
     )
 
-    if (sent.statusCode === 206 && rangeHeader) {
-      const parsed = parseByteRange(rangeHeader, upstream.body.byteLength)!
-      return upstream.body.subarray(parsed.start, parsed.end + 1)
-    }
-    return upstream.body
+    return sent.body
   } catch (error) {
     getEventLogger(event).warn(
       {

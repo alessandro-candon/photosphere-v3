@@ -2,20 +2,15 @@ import { resolve } from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import { defineNuxtConfig } from 'nuxt/config'
 import {
+  isBuildWithoutConfig,
   isOfflineTestOrTypecheck,
   loadPhotosphereConfig,
   type PhotosphereConfig,
 } from './server/utils/photosphere-config'
+import { normalizeAllowedEmails } from './shared/constants'
 
-const parseAllowedEmails = (raw: string | undefined): string[] =>
-  (raw || '')
-    .split(',')
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean)
-
-const fileConfig: PhotosphereConfig | null = isOfflineTestOrTypecheck()
-  ? null
-  : loadPhotosphereConfig()
+const skipConfigLoad = isOfflineTestOrTypecheck() || isBuildWithoutConfig()
+const fileConfig: PhotosphereConfig | null = skipConfigLoad ? null : loadPhotosphereConfig()
 
 const THEME_INIT_SCRIPT = `(function(){try{var s=localStorage.getItem('photosphere_theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(s?s==='dark':d){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`
 
@@ -61,13 +56,16 @@ export default defineNuxtConfig({
         appId: process.env.FIREBASE_APP_ID || fileConfig?.firebase.app_id || '',
       },
       defaultLang:
-        process.env.NUXT_PUBLIC_DEFAULT_LANG || fileConfig?.pipeline.default_lang || 'en',
+        process.env.NUXT_PUBLIC_DEFAULT_LANG ||
+        fileConfig?.pipeline.default_lang ||
+        (isBuildWithoutConfig() ? '' : 'en'),
     },
     storage: {
       mediaBucket: process.env.PHOTOSPHERE_MEDIA_BUCKET || fileConfig?.storage.media_bucket || '',
       dataBucket: process.env.PHOTOSPHERE_DATA_BUCKET || fileConfig?.storage.data_bucket || '',
       mountedVolumePath:
-        process.env.PHOTOSPHERE_MOUNTED_VOLUME_PATH || resolve(process.cwd(), '.photosphere-cache'),
+        process.env.PHOTOSPHERE_MOUNTED_VOLUME_PATH ||
+        (isBuildWithoutConfig() ? '' : resolve(process.cwd(), '.photosphere-cache')),
     },
     mediaCache: {
       directoryName: 'media',
@@ -85,7 +83,7 @@ export default defineNuxtConfig({
     },
     auth: {
       allowedEmails: process.env.ALLOWED_EMAILS
-        ? parseAllowedEmails(process.env.ALLOWED_EMAILS)
+        ? normalizeAllowedEmails(process.env.ALLOWED_EMAILS)
         : (fileConfig?.auth.allowed_emails ?? []),
       adminEmail: (process.env.ADMIN_EMAIL || fileConfig?.auth.admin_email || '')
         .trim()

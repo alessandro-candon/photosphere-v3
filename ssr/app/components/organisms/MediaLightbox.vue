@@ -184,6 +184,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ChevronLeft, ChevronRight, Download, FileText, FolderPlus, Info, X } from 'lucide-vue-next'
+import { formatMediaDateTime } from '#shared/date'
 import Badge from '../ui/Badge.vue'
 import Button from '../ui/Button.vue'
 import Skeleton from '../ui/Skeleton.vue'
@@ -208,18 +209,9 @@ const emit = defineEmits<{
 
 const showInfo = ref(false)
 
-const formattedDate = computed(() => {
-  const ts = props.item?.createdAtTimestamp
-  if (ts === null || ts === undefined || !Number.isFinite(ts)) {
-    return props.item?.createdAt || ''
-  }
-  const tsMs = Math.abs(ts) < 1e11 ? ts * 1000 : ts
-  const date = new Date(tsMs)
-  if (Number.isNaN(date.getTime())) {
-    return props.item?.createdAt || ''
-  }
-  return date.toLocaleString()
-})
+const formattedDate = computed(() =>
+  formatMediaDateTime(props.item?.createdAtTimestamp, props.item?.createdAt)
+)
 
 const onKeyDown = (event: KeyboardEvent) => {
   if (!props.open) return

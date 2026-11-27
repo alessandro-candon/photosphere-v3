@@ -1,24 +1,21 @@
 import { resolve } from 'node:path'
 import { createError } from 'h3'
+import { SHA1_REGEX, type AlbumSummary } from '#shared/index'
 import type { AlbumRecord, MediaDatabaseSnapshot } from '../types/cache'
+import { createAsyncMutex, createSingleFlight } from './async-mutex'
 import {
-  ensureMountedVolumeDir,
+  ensureMountedVolumeDirAsync,
   getDefaultCacheDir,
   loadJsonDatabaseWithMetadata,
-  writeFileAtomic,
+  writeFileAtomicAsync,
   type StorageOptions,
 } from './storage-download'
 import { uploadDataFile } from './storage-upload'
 
-const SHA1_REGEX = /^[0-9a-f]{40}$/
+export type AlbumSummaryDto = AlbumSummary
+
 const CONTROL_CHAR_REGEX = /[\u0000-\u001f\u007f]/
 const ALBUMS_FILENAME = 'photosphere_albums.json'
-
-export interface AlbumSummaryDto {
-  name: string
-  totalFiles: number
-  coverThumbnails: string[]
-}
 
 export interface AlbumMutationResult {
   album: AlbumSummaryDto | null
@@ -27,31 +24,21 @@ export interface AlbumMutationResult {
 
 let albumsCache: AlbumRecord[] | null = null
 let albumsGeneration: string | null = null
-let writeQueue: Promise<void> = Promise.resolve()
+let albumsEpoch = 0
+const withAlbumsWriteLock = createAsyncMutex()
+const albumsSingleFlight = createSingleFlight<string, AlbumRecord[]>()
 
 export const invalidateAlbumsCache = (): void => {
+  albumsEpoch += 1
   albumsCache = null
   albumsGeneration = null
+  albumsSingleFlight.clear()
 }
 
 export const getCachedAlbumsGeneration = (): string | null => albumsGeneration
 
 export const setCachedAlbumsGenerationForTests = (gen: string | null): void => {
   albumsGeneration = gen
-}
-
-const withAlbumsWriteLock = async <T>(fn: () => Promise<T>): Promise<T> => {
-  const prev = writeQueue
-  let release!: () => void
-  writeQueue = new Promise<void>((resolveLock) => {
-    release = resolveLock
-  })
-  await prev
-  try {
-    return await fn()
-  } finally {
-    release()
-  }
 }
 
 export const validateAlbumName = (raw: unknown): string => {
@@ -135,27 +122,39 @@ export const getAlbums = async (
     return albumsCache
   }
   const fileName = options?.albumsFileName || ALBUMS_FILENAME
-  try {
-    const loaded = await loadJsonDatabaseWithMetadata(
-      fileName,
-      fileName,
-      idToken,
-      validateAlbumsPayload,
-      options
-    )
-    albumsCache = loaded.data
-    if (loaded.generation !== null) {
-      albumsGeneration = loaded.generation
+  const entryEpoch = albumsEpoch
+
+  const loadAlbums = async (): Promise<AlbumRecord[]> => {
+    try {
+      const loaded = await loadJsonDatabaseWithMetadata(
+        fileName,
+        fileName,
+        idToken,
+        validateAlbumsPayload,
+        options
+      )
+      if (entryEpoch === albumsEpoch) {
+        albumsCache = loaded.data
+        albumsGeneration = loaded.generation
+      }
+      return loaded.data
+    } catch (error) {
+      if ((error as { statusCode?: number }).statusCode === 404) {
+        if (entryEpoch === albumsEpoch) {
+          albumsCache = []
+          albumsGeneration = '0'
+        }
+        return []
+      }
+      throw error
     }
-    return loaded.data
-  } catch (error) {
-    if ((error as { statusCode?: number }).statusCode === 404) {
-      albumsCache = []
-      albumsGeneration = '0'
-      return []
-    }
-    throw error
   }
+
+  if (options?.forceRefresh) {
+    return await loadAlbums()
+  }
+
+  return await albumsSingleFlight.run(`${fileName}:${entryEpoch}`, loadAlbums)
 }
 
 export const toAlbumSummary = (
@@ -202,17 +201,21 @@ const persistAlbumsWriteThrough = async (
     ifGenerationMatch: albumsGeneration,
   })
 
-  const mountedDir = ensureMountedVolumeDir(
+  const mountedDir = await ensureMountedVolumeDirAsync(
     undefined,
-    options?.mountedVolumePath || getDefaultCacheDir()
+    options?.mountedVolumePath ||
+      process.env.PHOTOSPHERE_MOUNTED_VOLUME_PATH ||
+      getDefaultCacheDir()
   )
   const localPath = resolve(mountedDir, fileName)
-  writeFileAtomic(localPath, serialized)
+  const metaPath = `${localPath}.meta.json`
+  await writeFileAtomicAsync(localPath, serialized)
+  await writeFileAtomicAsync(metaPath, JSON.stringify({ generation: uploadResult.generation }))
 
+  albumsEpoch += 1
+  albumsSingleFlight.clear()
   albumsCache = validated
-  if (uploadResult.generation !== null) {
-    albumsGeneration = uploadResult.generation
-  }
+  albumsGeneration = uploadResult.generation
 
   return albumsGeneration
 }

@@ -47,6 +47,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Calendar, Loader2 } from 'lucide-vue-next'
+import { formatTimelineDateGroup } from '#shared/date'
 import MediaTile from '../common/MediaTile.vue'
 import Button from '../ui/Button.vue'
 import Skeleton from '../ui/Skeleton.vue'
@@ -76,27 +77,10 @@ const emit = defineEmits<{
 const sentinelRef = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
-const formatDateLabel = (timestamp: number | null): string => {
-  if (timestamp === null || !Number.isFinite(timestamp)) {
-    return 'Undated'
-  }
-  const tsMs = Math.abs(timestamp) < 1e11 ? timestamp * 1000 : timestamp
-  const date = new Date(tsMs)
-  if (Number.isNaN(date.getTime())) {
-    return 'Undated'
-  }
-  return date.toLocaleDateString(undefined, {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
-}
-
 const groupedByDate = computed(() => {
   const groups = new Map<string, MediaGridItem[]>()
   for (const item of props.items) {
-    const label = formatDateLabel(item.createdAtTimestamp)
+    const label = formatTimelineDateGroup(item.createdAtTimestamp)
     const bucket = groups.get(label)
     if (bucket) {
       bucket.push(item)

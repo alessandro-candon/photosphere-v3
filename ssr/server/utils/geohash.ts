@@ -1,8 +1,9 @@
+import { GEOHASH_PRECISIONS } from '#shared/constants'
 import type { GeohashPrecision } from '../types/cache'
 
-const BASE32_ALPHABET = '0123456789bcdefghjkmnpqrstuvwxyz'
+export { GEOHASH_PRECISIONS }
 
-export const GEOHASH_PRECISIONS: readonly GeohashPrecision[] = [2, 3, 4, 5, 6] as const
+const BASE32_ALPHABET = '0123456789bcdefghjkmnpqrstuvwxyz'
 
 export const isValidCoordinatePair = (lat: unknown, lng: unknown): lat is number =>
   typeof lat === 'number' &&

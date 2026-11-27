@@ -1,21 +1,14 @@
 import { resolve } from 'node:path'
-import { createError, defineEventHandler, getQuery, getRouterParam } from 'h3'
+import { createError, defineEventHandler, getQuery } from 'h3'
 import { useRuntimeConfig } from '#imports'
 import { serveMediaFromCache, type MediaVariant } from '../../services/media-cache.service'
 import { getMediaDatabase } from '../../utils/file-database-cache'
+import { getRuntimeDatabaseNames, parseSha1Param } from '../../utils/request-parsers'
 import { getRuntimeStorageOptions, requireBearerToken } from '../../utils/runtime-storage'
 import { getDefaultCacheDir } from '../../utils/storage-download'
 
-const SHA1_REGEX = /^[0-9a-f]{40}$/
-
 export default defineEventHandler(async (event) => {
-  const hash = getRouterParam(event, 'hash') || ''
-  if (!SHA1_REGEX.test(hash)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Invalid media hash parameter',
-    })
-  }
+  const hash = parseSha1Param(event, 'hash', 'media')
 
   const query = getQuery(event)
   const rawVariant =
@@ -31,9 +24,10 @@ export default defineEventHandler(async (event) => {
   const cfg = useRuntimeConfig(event)
   const idToken = requireBearerToken(event)
   const storageOpts = getRuntimeStorageOptions(event)
+  const dbNames = getRuntimeDatabaseNames(event)
   const snapshot = await getMediaDatabase(idToken, {
     ...storageOpts,
-    dbFileName: cfg.database?.jsonFileName,
+    dbFileName: dbNames.dbFileName,
   })
 
   const record = snapshot.recordsByHash[hash]

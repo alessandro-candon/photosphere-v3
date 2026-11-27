@@ -62,6 +62,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute } from '#imports'
+import { MONTH_DAY_REGEX } from '#shared/constants'
 import EmptyState from '../components/common/EmptyState.vue'
 import ErrorBanner from '../components/common/ErrorBanner.vue'
 import AlbumPickerSheet from '../components/organisms/AlbumPickerSheet.vue'
@@ -71,8 +72,6 @@ import PageHeader from '../components/organisms/PageHeader.vue'
 import { useAlbumPicker } from '../composables/useAlbumPicker'
 import { useMediaFeed } from '../composables/useMediaFeed'
 import { useAuthStore } from '../stores/auth'
-
-const MONTH_DAY_REGEX = /^\d{2}-\d{2}$/
 
 const route = useRoute()
 const authStore = useAuthStore()

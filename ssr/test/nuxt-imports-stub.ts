@@ -1,6 +1,13 @@
 export interface MockRuntimeConfig {
   public: {
     defaultLang: string
+    firebase: {
+      apiKey: string
+      authDomain: string
+      projectId: string
+      storageBucket: string
+      appId: string
+    }
   }
   storage: {
     mediaBucket: string
@@ -43,6 +50,13 @@ export interface MockRuntimeConfigOverride {
 let currentConfig: MockRuntimeConfig = {
   public: {
     defaultLang: 'en',
+    firebase: {
+      apiKey: '',
+      authDomain: '',
+      projectId: '',
+      storageBucket: '',
+      appId: '',
+    },
   },
   storage: {
     mediaBucket: process.env.PHOTOSPHERE_MEDIA_BUCKET || 'test-media-archive',
@@ -76,9 +90,24 @@ let currentConfig: MockRuntimeConfig = {
   },
 }
 
+let mockNuxtApp: Record<string, unknown> = {}
+let mockRoute: { path: string; query: Record<string, unknown>; params: Record<string, unknown> } = {
+  path: '/',
+  query: {},
+  params: {},
+}
+let navigateToHandler: (to: unknown) => Promise<void> | void = async () => {}
+
 export const setMockRuntimeConfig = (next: MockRuntimeConfigOverride): void => {
   currentConfig = {
-    public: { ...currentConfig.public, ...next.public },
+    public: {
+      ...currentConfig.public,
+      ...next.public,
+      firebase: {
+        ...currentConfig.public.firebase,
+        ...next.public?.firebase,
+      },
+    },
     storage: { ...currentConfig.storage, ...next.storage },
     mediaCache: { ...currentConfig.mediaCache, ...next.mediaCache },
     location: { ...currentConfig.location, ...next.location },
@@ -87,4 +116,22 @@ export const setMockRuntimeConfig = (next: MockRuntimeConfigOverride): void => {
   }
 }
 
+export const setMockNuxtApp = (next: Record<string, unknown>): void => {
+  mockNuxtApp = next
+}
+
+export const setMockRoute = (
+  next: Partial<{ path: string; query: Record<string, unknown>; params: Record<string, unknown> }>
+): void => {
+  mockRoute = { ...mockRoute, ...next }
+}
+
+export const setMockNavigateTo = (fn: (to: unknown) => Promise<void> | void): void => {
+  navigateToHandler = fn
+}
+
 export const useRuntimeConfig = () => currentConfig
+export const useNuxtApp = () => mockNuxtApp
+export const useRoute = () => mockRoute
+export const navigateTo = (to: unknown) => navigateToHandler(to)
+export const defineNuxtRouteMiddleware = <T>(fn: T): T => fn

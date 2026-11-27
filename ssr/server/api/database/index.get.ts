@@ -7,6 +7,7 @@ import {
   getMediaDatabase,
   normalizeLanguageCode,
 } from '../../utils/file-database-cache'
+import { getRuntimeDatabaseNames } from '../../utils/request-parsers'
 import { getRuntimeStorageOptions, requireBearerToken } from '../../utils/runtime-storage'
 
 export default defineEventHandler(async (event) => {
@@ -15,24 +16,18 @@ export default defineEventHandler(async (event) => {
 
   const idToken = requireBearerToken(event)
   const storageOpts = getRuntimeStorageOptions(event)
+  const dbNames = getRuntimeDatabaseNames(event)
   const query = getQuery(event)
-
   const lang = normalizeLanguageCode(query.lang, cfg.public?.defaultLang || 'en')
-  const dbFileName = cfg.database?.jsonFileName || 'photosphere_database_cloud.json'
-  const labelsSuffix =
-    cfg.database?.labelsJsonFileName || 'photosphere_image_labelling_database_cloud.json'
-  const captionsSuffix =
-    cfg.database?.captionsJsonFileName || 'photosphere_image_caption_database_cloud.json'
-  const albumsFileName = cfg.database?.albumsJsonFileName || 'photosphere_albums.json'
 
   const [snapshot, dicts, albums] = await Promise.all([
-    getMediaDatabase(idToken, { ...storageOpts, dbFileName }),
+    getMediaDatabase(idToken, { ...storageOpts, dbFileName: dbNames.dbFileName }),
     getLanguageDictionaries(lang, idToken, {
       ...storageOpts,
-      labelsSuffix,
-      captionsSuffix,
+      labelsSuffix: dbNames.labelsSuffix,
+      captionsSuffix: dbNames.captionsSuffix,
     }),
-    getAlbums(idToken, { ...storageOpts, albumsFileName }),
+    getAlbums(idToken, { ...storageOpts, albumsFileName: dbNames.albumsFileName }),
   ])
 
   return {
@@ -40,22 +35,22 @@ export default defineEventHandler(async (event) => {
     loadedAt: snapshot.loadedAt,
     files: {
       mediaDb: {
-        fileName: dbFileName,
+        fileName: dbNames.dbFileName,
         count: snapshot.sortedHashes.length,
         data: snapshot.recordsByHash,
       },
       labels: {
-        fileName: `${dicts.lang}_${labelsSuffix}`,
+        fileName: `${dicts.lang}_${dbNames.labelsSuffix}`,
         count: Object.keys(dicts.labels).length,
         data: dicts.labels,
       },
       captions: {
-        fileName: `${dicts.lang}_${captionsSuffix}`,
+        fileName: `${dicts.lang}_${dbNames.captionsSuffix}`,
         count: Object.keys(dicts.captions).length,
         data: dicts.captions,
       },
       albums: {
-        fileName: albumsFileName,
+        fileName: dbNames.albumsFileName,
         count: albums.length,
         data: albums,
       },

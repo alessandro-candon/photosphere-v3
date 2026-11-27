@@ -1,8 +1,11 @@
 import { IncomingMessage, ServerResponse } from 'node:http'
+import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { Socket } from 'node:net'
+import { tmpdir } from 'node:os'
+import { resolve } from 'node:path'
 import { createEvent, type H3Event } from 'h3'
 import type { DecodedIdToken } from 'firebase-admin/auth'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import meHandler from '../../server/api/me.get'
 import sessionDeleteHandler from '../../server/api/auth/session.delete'
 import sessionPostHandler from '../../server/api/auth/session.post'
@@ -14,6 +17,8 @@ import {
   createMediaSessionCookieValue,
   extractBearerToken,
   normalizeAllowedEmails,
+  resolveMediaSessionMaxAge,
+  resolveSessionSecret,
   verifyAuthorizedUser,
   verifyMediaSessionCookieValue,
 } from '../../server/services/auth.service'
@@ -52,6 +57,14 @@ const makeDecodedToken = (overrides: Partial<DecodedIdToken> = {}): DecodedIdTok
   }) as DecodedIdToken
 
 describe('Server Auth Middleware, Media Session Cookie & Email Allowlist', () => {
+  const tempDirs: string[] = []
+
+  afterEach(() => {
+    for (const dir of tempDirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
   beforeEach(() => {
     setMockRuntimeConfig({
       auth: {
@@ -220,5 +233,36 @@ describe('Server Auth Middleware, Media Session Cookie & Email Allowlist', () =>
 
     const logoutEvent = makeEvent('/api/auth/session', { method: 'DELETE' })
     expect(sessionDeleteHandler(logoutEvent)).toEqual({ authenticated: false })
+  })
+
+  it('clamps __ps_media TTL to Firebase JWT exp and persists .session-secret in mountedVolumePath', () => {
+    const makeJwt = (expSec: number) => {
+      const header = Buffer.from(JSON.stringify({ alg: 'RS256' })).toString('base64url')
+      const payload = Buffer.from(JSON.stringify({ exp: expSec })).toString('base64url')
+      return `${header}.${payload}.sig`
+    }
+
+    const nowSec = Math.floor(Date.now() / 1000)
+    expect(resolveMediaSessionMaxAge('opaque-test-token', 3600)).toBe(3600)
+    const clamped = resolveMediaSessionMaxAge(makeJwt(nowSec + 120), 3600)
+    expect(clamped).toBeGreaterThan(100)
+    expect(clamped).toBeLessThanOrEqual(120)
+    expect(() => resolveMediaSessionMaxAge(makeJwt(nowSec - 10), 3600)).toThrowError(/expired/)
+
+    const vol = mkdtempSync(resolve(tmpdir(), 'ps-sec-'))
+    tempDirs.push(vol)
+    const prevSecret = process.env.PHOTOSPHERE_SESSION_SECRET
+    delete process.env.PHOTOSPHERE_SESSION_SECRET
+    try {
+      const s1 = resolveSessionSecret(undefined, vol)
+      const s2 = resolveSessionSecret(undefined, vol)
+      expect(s1).toBe(s2)
+      expect(s1.length).toBeGreaterThanOrEqual(64)
+      const secretPath = resolve(vol, '.session-secret')
+      expect(readFileSync(secretPath, 'utf-8').trim()).toBe(s1)
+      expect(statSync(secretPath).mode & 0o777).toBe(0o600)
+    } finally {
+      if (prevSecret !== undefined) process.env.PHOTOSPHERE_SESSION_SECRET = prevSecret
+    }
   })
 })

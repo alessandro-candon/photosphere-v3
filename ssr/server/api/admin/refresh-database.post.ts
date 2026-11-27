@@ -9,6 +9,7 @@ import {
   invalidateFileDatabaseCache,
   normalizeLanguageCode,
 } from '../../utils/file-database-cache'
+import { getRuntimeDatabaseNames } from '../../utils/request-parsers'
 import { getRuntimeStorageOptions, requireBearerToken } from '../../utils/runtime-storage'
 
 export default defineEventHandler(async (event) => {
@@ -17,6 +18,7 @@ export default defineEventHandler(async (event) => {
 
   const idToken = requireBearerToken(event)
   const storageOpts = getRuntimeStorageOptions(event)
+  const dbNames = getRuntimeDatabaseNames(event)
   const query = getQuery(event)
   const lang = normalizeLanguageCode(query.lang, cfg.public?.defaultLang || 'en')
 
@@ -25,13 +27,13 @@ export default defineEventHandler(async (event) => {
 
   const refreshOpts = { ...storageOpts, forceRefresh: true }
   const [snapshot, dicts, albums] = await Promise.all([
-    getMediaDatabase(idToken, { ...refreshOpts, dbFileName: cfg.database?.jsonFileName }),
+    getMediaDatabase(idToken, { ...refreshOpts, dbFileName: dbNames.dbFileName }),
     getLanguageDictionaries(lang, idToken, {
       ...refreshOpts,
-      labelsSuffix: cfg.database?.labelsJsonFileName,
-      captionsSuffix: cfg.database?.captionsJsonFileName,
+      labelsSuffix: dbNames.labelsSuffix,
+      captionsSuffix: dbNames.captionsSuffix,
     }),
-    getAlbums(idToken, { ...refreshOpts, albumsFileName: cfg.database?.albumsJsonFileName }),
+    getAlbums(idToken, { ...refreshOpts, albumsFileName: dbNames.albumsFileName }),
   ])
 
   getEventLogger(event).info(
