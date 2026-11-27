@@ -4,6 +4,7 @@
 !.env.example
 photosphere.config.json
 photosphere.config.json.*.tmp
+photosphere.**.config.json
 /firebase.json
 .firebase/
 firebase-debug.log*

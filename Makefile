@@ -1,7 +1,10 @@
-.PHONY: setup init dev dev-gcs cli cli-docker lint typecheck test check build docker-build
+.PHONY: setup init dev dev-gcs cli cli-docker lint typecheck test check build docker-build ssr-docker-build ssr-docker-run
 
 ARGS ?=
 MEDIA_DIR ?= ./data/media
+CLIENT ?= default
+SSR_PORT ?= 3000
+CONFIG_FILE ?= photosphere.config.json
 
 setup:
 	cd cli && uv sync --dev
@@ -44,3 +47,17 @@ build:
 docker-build:
 	docker build -f cli/Dockerfile -t photosphere-cli:local .
 	docker build -f ssr/Dockerfile -t photosphere-ssr:local .
+
+ssr-docker-build:
+	docker build -f ssr/Dockerfile --target static \
+		--build-arg PHOTOSPHERE_CONFIG_FILE=$(patsubst $(CURDIR)/%,%,$(CONFIG_FILE)) \
+		-t photosphere-ssr:$(CLIENT) .
+
+ssr-docker-run: ssr-docker-build
+	docker rm -f photosphere-ssr-$(CLIENT) 2>/dev/null || true
+	docker run -d \
+		--name photosphere-ssr-$(CLIENT) \
+		--restart unless-stopped \
+		-p $(SSR_PORT):3000 \
+		-v photosphere_cache_$(CLIENT):/app/.photosphere-cache \
+		photosphere-ssr:$(CLIENT)

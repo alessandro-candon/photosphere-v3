@@ -13,7 +13,7 @@ RUN pnpm install --frozen-lockfile
 COPY ssr/ .
 RUN pnpm build
 
-FROM node:22-slim AS runner
+FROM node:22-slim AS runner-base
 
 WORKDIR /app
 
@@ -37,3 +37,13 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:3000/api/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", ".output/server/index.mjs"]
+
+FROM runner-base AS static
+ARG PHOTOSPHERE_CONFIG_FILE=photosphere.config.json
+USER root
+RUN mkdir -p /app/.photosphere-cache && \
+    chown -R nuxtjs:nodejs /app/.photosphere-cache
+USER nuxtjs
+COPY --chown=nuxtjs:nodejs ${PHOTOSPHERE_CONFIG_FILE} ./photosphere.config.json
+
+FROM runner-base AS runner
