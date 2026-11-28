@@ -125,6 +125,28 @@
           "minLength": 2
         }
       }
+    },
+    "profile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "cli_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hostname": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     }
   }
 }

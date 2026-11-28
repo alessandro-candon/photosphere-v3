@@ -10,7 +10,7 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
-from photosphere.config import StorageClass
+from photosphere.config import DEFAULT_CONFIG_FILENAME, StorageClass
 from photosphere.init.models import (
     AuthConfig,
     BootstrapConfigError,
@@ -19,6 +19,7 @@ from photosphere.init.models import (
     PhotosphereConfig,
     PipelineConfig,
     StorageConfig,
+    build_config_metadata,
 )
 from photosphere.init.rest_client import GoogleRestClient, RestApiError
 from photosphere.pipeline.common import (
@@ -56,6 +57,7 @@ class BootstrapOptions:
     web_app_name: str = "photosphere-ssr"
     google_oauth_client_id: str | None = None
     google_oauth_client_secret: str | None = None
+    profile: str = "default"
 
 
 class BootstrapProvisioner:
@@ -457,4 +459,39 @@ class BootstrapProvisioner:
                 default_lang=options.default_lang,
                 target_lang=options.target_lang,
             ),
+            profile=options.profile,
+            metadata=build_config_metadata(),
         )
+
+    def upload_config_backup(
+        self, data_bucket: str, config: PhotosphereConfig
+    ) -> None:
+        """Upload photosphere.config.json to data_bucket for cross-machine recovery."""
+        upload_url = (
+            f"https://storage.googleapis.com/upload/storage/v1/b/{data_bucket}"
+            f"/o?name={DEFAULT_CONFIG_FILENAME}"
+        )
+        payload = (json.dumps(config.model_dump(mode="json"), indent=2) + "\n").encode(
+            "utf-8"
+        )
+        self._rest.upload_bytes(
+            upload_url,
+            payload,
+            content_type="application/json",
+        )
+
+    def download_config_backup(self, data_bucket: str) -> PhotosphereConfig | None:
+        """Fetch photosphere.config.json from data_bucket if it already exists."""
+        url = (
+            f"https://storage.googleapis.com/storage/v1/b/{data_bucket}"
+            f"/o/{DEFAULT_CONFIG_FILENAME}"
+        )
+        status, data = self._rest.request_json(
+            "GET",
+            url,
+            params={"alt": "media"},
+            allow_statuses=(403, 404),
+        )
+        if status in (403, 404) or not data:
+            return None
+        return PhotosphereConfig.model_validate(data)

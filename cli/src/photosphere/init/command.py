@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Literal, cast
 
 import click
 
-from photosphere.config import StorageClass
+from photosphere.config import StorageClass, normalize_profile_name
 from photosphere.init.models import (
     BootstrapConfigError,
+    build_config_metadata,
     load_and_validate_config,
     resolve_config_path,
     write_config_atomic,
@@ -81,6 +83,7 @@ def _build_options(
     non_interactive: bool,
     google_oauth_client_id: str | None,
     google_oauth_client_secret: str | None,
+    profile: str = "default",
 ) -> BootstrapOptions:
     resolved_project = _prompt_if_missing(
         project_id, "Firebase / GCP Project ID", non_interactive=non_interactive
@@ -143,6 +146,7 @@ def _build_options(
         target_lang=target_lang,
         google_oauth_client_id=google_oauth_client_id,
         google_oauth_client_secret=google_oauth_client_secret,
+        profile=profile,
     )
 
 
@@ -208,20 +212,63 @@ def init_command(
     effective_config_path = config_path or ctx_obj.get("config_path")
     credentials_path: Path | None = ctx_obj.get("credentials_path")
     profile: str | None = ctx_obj.get("profile")
+    active_profile = normalize_profile_name(profile)
+    assume_yes = bool(ctx_obj.get("assume_yes", False))
 
-    target_path = resolve_config_path(effective_config_path, profile=profile)
+    target_path = resolve_config_path(effective_config_path, profile=active_profile)
     if target_path.exists() and not force:
         existing = load_and_validate_config(target_path)
         click.echo(json.dumps(existing.model_dump(mode="json"), indent=2))
         return
 
     try:
+        resolved_project = _prompt_if_missing(
+            project_id, "Firebase / GCP Project ID", non_interactive=non_interactive
+        )
+        resolved_data = _prompt_if_missing(
+            data_bucket,
+            "Data GCS Bucket",
+            default=f"{resolved_project}-photosphere-data",
+            non_interactive=non_interactive,
+        )
+        rest_client = GoogleRestClient(
+            resolved_project, credentials_path=credentials_path
+        )
+        provisioner = BootstrapProvisioner(
+            rest_client,
+            lambda url, step: prompt_console_step(
+                url, step, non_interactive=non_interactive
+            ),
+            templates_dir=_resolve_templates_dir(infra_dir),
+        )
+        if not target_path.exists() and not force:
+            remote_cfg = provisioner.download_config_backup(resolved_data)
+            if remote_cfg is not None and (
+                non_interactive
+                or assume_yes
+                or not sys.stdin.isatty()
+                or click.confirm(
+                    f"Found existing photosphere.config.json in gs://{resolved_data}. "
+                    f"Download and restore it for profile '{active_profile}'?",
+                    default=True,
+                )
+            ):
+                restored = remote_cfg.model_copy(
+                    update={
+                        "profile": active_profile,
+                        "metadata": build_config_metadata(),
+                    }
+                )
+                write_config_atomic(target_path, restored)
+                click.echo(json.dumps(restored.model_dump(mode="json"), indent=2))
+                return
+
         options = _build_options(
-            project_id=project_id,
+            project_id=resolved_project,
             location=location,
             mode=mode.lower() if mode else None,
             media_bucket=media_bucket,
-            data_bucket=data_bucket,
+            data_bucket=resolved_data,
             media_storage_class=(
                 media_storage_class.upper() if media_storage_class else None
             ),
@@ -234,19 +281,11 @@ def init_command(
             non_interactive=non_interactive,
             google_oauth_client_id=google_oauth_client_id,
             google_oauth_client_secret=google_oauth_client_secret,
-        )
-        rest_client = GoogleRestClient(
-            options.project_id, credentials_path=credentials_path
-        )
-        provisioner = BootstrapProvisioner(
-            rest_client,
-            lambda url, step: prompt_console_step(
-                url, step, non_interactive=non_interactive
-            ),
-            templates_dir=_resolve_templates_dir(infra_dir),
+            profile=active_profile,
         )
         config = provisioner.run(options)
         write_config_atomic(target_path, config)
+        provisioner.upload_config_backup(options.data_bucket, config)
         click.echo(json.dumps(config.model_dump(mode="json"), indent=2))
     except (BootstrapConfigError, RestApiError) as exc:
         raise click.ClickException(str(exc)) from exc

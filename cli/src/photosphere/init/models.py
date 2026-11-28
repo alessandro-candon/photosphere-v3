@@ -5,12 +5,15 @@ from __future__ import annotations
 import json
 import os
 import re
+import socket
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
+from photosphere import __version__
 from photosphere.config import (
     DEFAULT_CONFIG_FILENAME,
     DEFAULT_PROFILE,
@@ -99,6 +102,25 @@ class PipelineConfig(BaseModel):
     target_lang: str = Field(default="it", min_length=2)
 
 
+class ConfigMetadata(BaseModel):
+    """Debug and provenance metadata recorded in photosphere.config.json."""
+
+    model_config = ConfigDict(extra="allow")
+
+    cli_version: str = Field(min_length=1)
+    updated_at: str = Field(min_length=1)
+    hostname: str = Field(min_length=1)
+
+
+def build_config_metadata() -> ConfigMetadata:
+    """Build current CLI/host debug metadata for photosphere.config.json."""
+    return ConfigMetadata(
+        cli_version=__version__,
+        updated_at=datetime.now(UTC).isoformat(),
+        hostname=socket.gethostname(),
+    )
+
+
 class PhotosphereConfig(BaseModel):
     """Canonical root configuration stored in photosphere.config.json."""
 
@@ -110,6 +132,8 @@ class PhotosphereConfig(BaseModel):
     firebase: FirebaseConfig
     auth: AuthConfig
     pipeline: PipelineConfig = Field(default_factory=PipelineConfig)
+    profile: str | None = None
+    metadata: ConfigMetadata | None = None
 
 
 def resolve_config_path(

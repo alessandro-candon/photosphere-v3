@@ -342,6 +342,103 @@ def test_bundled_templates_match_repo_infra_files() -> None:
     assert "match /{allPaths=**} {\n      allow read: if isAllowedUser();" in rules_text
 
 
+def test_init_backup_upload_and_remote_recovery_flow(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("PHOTOSPHERE_CONFIG_PATH", raising=False)
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    remote_store: dict[str, dict[str, Any]] = {}
+
+    class _FakeRestClient:
+        def __init__(
+            self, project_id: str, *, credentials_path: Path | None = None
+        ) -> None:
+            _ = project_id, credentials_path
+
+    class _FakeProvisioner:
+        def __init__(
+            self, rest_client: Any, prompt_fn: Any, *, templates_dir: Path | None = None
+        ) -> None:
+            _ = rest_client, prompt_fn, templates_dir
+
+        def download_config_backup(self, data_bucket: str) -> PhotosphereConfig | None:
+            raw = remote_store.get(data_bucket)
+            return PhotosphereConfig.model_validate(raw) if raw is not None else None
+
+        def upload_config_backup(
+            self, data_bucket: str, config: PhotosphereConfig
+        ) -> None:
+            remote_store[data_bucket] = config.model_dump(mode="json")
+
+        def run(self, options: BootstrapOptions) -> PhotosphereConfig:
+            cfg = _sample_config()
+            cfg.profile = options.profile
+            cfg.storage.data_bucket = options.data_bucket
+            return cfg
+
+    monkeypatch.setattr("photosphere.init.command.GoogleRestClient", _FakeRestClient)
+    monkeypatch.setattr(
+        "photosphere.init.command.BootstrapProvisioner", _FakeProvisioner
+    )
+
+    runner = CliRunner()
+    # 1) First init provisions and uploads backup to data_bucket.
+    res1 = runner.invoke(
+        cli,
+        [
+            "--profile",
+            "primary",
+            "init",
+            "--project-id",
+            "proj-dev",
+            "--location",
+            "europe-west1",
+            "--mode",
+            "dev",
+            "--media-bucket",
+            "proj-dev-media",
+            "--data-bucket",
+            "proj-dev-data",
+            "--allowed-emails",
+            "alice@example.com",
+            "--admin-email",
+            "alice@example.com",
+            "--non-interactive",
+        ],
+    )
+    assert res1.exit_code == 0, res1.output
+    assert "proj-dev-data" in remote_store
+    assert remote_store["proj-dev-data"]["profile"] == "primary"
+
+    # 2) Second machine / profile recovers config from data_bucket without provisioning.
+    def _fail_run(*args: Any, **kwargs: Any) -> Any:
+        raise AssertionError("run() must not be called when recovering from backup")
+
+    monkeypatch.setattr(_FakeProvisioner, "run", _fail_run)
+    res2 = runner.invoke(
+        cli,
+        [
+            "--profile",
+            "laptop",
+            "init",
+            "--project-id",
+            "proj-dev",
+            "--data-bucket",
+            "proj-dev-data",
+            "--non-interactive",
+        ],
+    )
+    assert res2.exit_code == 0, res2.output
+    laptop_cfg = load_and_validate_config(
+        tmp_path / ".photosphere" / "profiles" / "laptop" / "photosphere.config.json"
+    )
+    assert laptop_cfg.profile == "laptop"
+    assert laptop_cfg.metadata is not None
+    assert laptop_cfg.metadata.cli_version == "0.1.0"
+
+
 def test_missing_config_and_non_interactive_cli_errors(tmp_path: Path) -> None:
     with pytest.raises(BootstrapConfigError, match="photosphere init"):
         load_and_validate_config(tmp_path / "missing.json")
@@ -380,6 +477,16 @@ def test_root_cli_forwards_creds_to_init_rest_client(
         def run(self, options: BootstrapOptions) -> PhotosphereConfig:
             _ = options
             return _sample_config()
+
+        def download_config_backup(self, data_bucket: str) -> PhotosphereConfig | None:
+            _ = data_bucket
+            return None
+
+        def upload_config_backup(
+            self, data_bucket: str, config: PhotosphereConfig
+        ) -> None:
+            captured["uploaded_backup_bucket"] = data_bucket
+            captured["uploaded_backup_profile"] = config.profile
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("photosphere.init.command.GoogleRestClient", _StubRestClient)

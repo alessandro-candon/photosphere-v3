@@ -90,21 +90,21 @@
     "semantic_hash": ""
   },
   "cli/src/photosphere/init/command.py": {
-    "mtime": 1795849428.900414,
-    "seen": 1795849553.3830383,
-    "ast_hash": "ea15495a557ce71af766131a1ceceb3e",
+    "mtime": 1795850725.736127,
+    "seen": 1795850783.8281145,
+    "ast_hash": "028e30ef4b57db1be6201aca156d0986",
     "semantic_hash": ""
   },
   "cli/src/photosphere/init/models.py": {
-    "mtime": 1795849440.1134906,
-    "seen": 1795849553.3830402,
-    "ast_hash": "50ab575f36c0d6f7ecc5714b2b092af2",
+    "mtime": 1795850763.1603816,
+    "seen": 1795850783.828117,
+    "ast_hash": "358c0f08ea4576ce649eb1e96504b66b",
     "semantic_hash": ""
   },
   "cli/src/photosphere/init/provisioner.py": {
-    "mtime": 1795365463.6450317,
-    "seen": 1795531935.5632448,
-    "ast_hash": "6a624fbfe96aefbfd6bb12a1def9e9eb",
+    "mtime": 1795850707.543003,
+    "seen": 1795850783.8281193,
+    "ast_hash": "0953d171a30bfedfea5c36f4159cb40b",
     "semantic_hash": ""
   },
   "cli/src/photosphere/init/rest_client.py": {
@@ -294,9 +294,9 @@
     "semantic_hash": ""
   },
   "cli/tests/init/test_bootstrap.py": {
-    "mtime": 1795849476.0567255,
-    "seen": 1795849553.3831022,
-    "ast_hash": "f212aa8cc00f3f1cb2c4730c8f1c319d",
+    "mtime": 1795850750.174293,
+    "seen": 1795850783.8281813,
+    "ast_hash": "04f11db44398327bdce94d53c8c952c1",
     "semantic_hash": ""
   },
   "cli/tests/integration/__init__.py": {
@@ -468,9 +468,9 @@
     "semantic_hash": ""
   },
   "contracts/photosphere_config.schema.json": {
-    "mtime": 1794850620.6934807,
-    "seen": 1795531935.5633245,
-    "ast_hash": "e08c2e1739781fc5eaf5a39faff96d1b",
+    "mtime": 1795850698.8509438,
+    "seen": 1795850783.8282356,
+    "ast_hash": "6ee05ac437367b045114451bbb78b768",
     "semantic_hash": ""
   },
   "infra/cors.json": {
@@ -1164,15 +1164,15 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1795424617.6412964,
-    "seen": 1795531935.563504,
-    "ast_hash": "68f397589201b7282c45579233121d93",
+    "mtime": 1795849666.4689806,
+    "seen": 1795850783.828495,
+    "ast_hash": "7dc9d80040ae64fea23c5c05581169b4",
     "semantic_hash": ""
   },
   "cli/README.md": {
-    "mtime": 1795365540.2492592,
-    "seen": 1795531935.563505,
-    "ast_hash": "7c704b2511d5a5703c134657dfaf681c",
+    "mtime": 1795849668.0639913,
+    "seen": 1795850783.8284967,
+    "ast_hash": "2fd7d51332240f4bedccb226718c32ea",
     "semantic_hash": ""
   },
   "contracts/README.md": {
