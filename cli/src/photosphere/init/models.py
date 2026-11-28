@@ -11,7 +11,13 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
-from photosphere.config import DEFAULT_CONFIG_FILENAME, StorageClass
+from photosphere.config import (
+    DEFAULT_CONFIG_FILENAME,
+    DEFAULT_PROFILE,
+    StorageClass,
+    normalize_profile_name,
+    profile_root_dir,
+)
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -106,20 +112,26 @@ class PhotosphereConfig(BaseModel):
     pipeline: PipelineConfig = Field(default_factory=PipelineConfig)
 
 
-def resolve_config_path(explicit_path: Path | None = None) -> Path:
-    """Resolve photosphere.config.json from explicit arg, env, cwd, or repo root."""
+def resolve_config_path(
+    explicit_path: Path | None = None,
+    *,
+    profile: str | None = None,
+) -> Path:
+    """Resolve photosphere.config.json from explicit arg, env, or active profile."""
     if explicit_path is not None:
         return explicit_path.expanduser().resolve()
     env_path = os.getenv("PHOTOSPHERE_CONFIG_PATH")
     if env_path:
         return Path(env_path).expanduser().resolve()
-    cwd_candidate = Path.cwd() / DEFAULT_CONFIG_FILENAME
-    if cwd_candidate.exists():
-        return cwd_candidate.resolve()
-    parent_candidate = Path.cwd().parent / DEFAULT_CONFIG_FILENAME
-    if parent_candidate.exists():
-        return parent_candidate.resolve()
-    return cwd_candidate.resolve()
+    active_profile = normalize_profile_name(profile)
+    if active_profile == DEFAULT_PROFILE:
+        cwd_candidate = Path.cwd() / DEFAULT_CONFIG_FILENAME
+        if cwd_candidate.exists():
+            return cwd_candidate.resolve()
+        parent_candidate = Path.cwd().parent / DEFAULT_CONFIG_FILENAME
+        if parent_candidate.exists():
+            return parent_candidate.resolve()
+    return (profile_root_dir(active_profile) / DEFAULT_CONFIG_FILENAME).resolve()
 
 
 def load_and_validate_config(path: Path) -> PhotosphereConfig:

@@ -18,7 +18,7 @@ Python 3.12 CLI package (`photosphere`) for local media scanning, EXIF/`ffprobe`
 - **Project Bootstrap ([src/photosphere/init/](./src/photosphere/init/)):**
   - `photosphere init` provisions GCP/Firebase APIs, dual GCS buckets, CORS, empty JSON database seeds, Firebase Storage links, email-gated `storage.rules` (using `./infra/` or bundled `templates/`), Firebase Web App SDK config, and Firebase Auth into `photosphere.config.json`.
 - **Storage & Pipeline ([src/photosphere/storage/](./src/photosphere/storage/), [src/photosphere/pipeline/](./src/photosphere/pipeline/)):**
-  - Loads `photosphere.config.json` via `--config-file` > `PHOTOSPHERE_CONFIG_PATH` > `./photosphere.config.json` > `../photosphere.config.json` > `~/.photosphere/photosphere.config.json`, resolves GCP credentials (`STORAGE_EMULATOR_HOST` > `--creds` > `GOOGLE_APPLICATION_CREDENTIALS` > `~/.photosphere/credentials.json` > `gcloud` ADC), verifies bucket classes, logs progress to a local NDJSON checkpoint, uploads originals and `thumbnails/` to the media bucket, and updates JSON databases in the data bucket using `if_generation_match`.
+  - Supports isolated profiles via `--profile <name>` / `PHOTOSPHERE_PROFILE` (default `default`, with an interactive confirmation prompt unless `-y`/`--yes` or non-TTY). Loads `photosphere.config.json` via `--config-file` > `PHOTOSPHERE_CONFIG_PATH` > `~/.photosphere/profiles/<profile>/photosphere.config.json` (plus CWD/parent/legacy `~/.photosphere/photosphere.config.json` fallback for `default`), resolves GCP credentials (`STORAGE_EMULATOR_HOST` > `--creds` > `GOOGLE_APPLICATION_CREDENTIALS` > `~/.photosphere/credentials.json` > `gcloud` ADC), verifies bucket classes, logs progress to a per-profile NDJSON checkpoint, uploads originals and `thumbnails/` to the media bucket, and updates JSON databases in the data bucket using `if_generation_match`.
 
 ## Host-Native Install & Diagnostics
 
@@ -35,7 +35,8 @@ photosphere ingest /path/to/media --routing-mode chronological --dry-run
 photosphere ingest /path/to/media --offline
 ```
 
-- Default shared cache: `~/.photosphere/cache` (override with `PHOTOSPHERE_CACHE_DIR`); stores Hugging Face weights, `transformers_modules`, EasyNMT models, thumbnails, and DB snapshots in one portable directory.
+- Shared AI model cache: `~/.photosphere/cache` (override with `PHOTOSPHERE_MODELS_DIR`); stores Hugging Face weights, `transformers_modules`, and EasyNMT models across all profiles.
+- Per-profile runtime state: `~/.photosphere/profiles/<profile>/{photosphere.config.json,cache/,skipped/}` (override with `PHOTOSPHERE_CACHE_DIR` and `PHOTOSPHERE_SKIPPED_DIR`); isolates thumbnails, `ingest_checkpoint.ndjson`, DB snapshots, and skipped files per profile.
 - `--offline` (or `PHOTOSPHERE_AI_OFFLINE=1`): Loads local AI and translation models with `local_files_only=True` without contacting `huggingface.co`.
 - `PHOTOSPHERE_AI_MAX_IMAGE_SIZE`: Max pixel dimension for in-memory AI image resizing (default `378`, matching Moondream2's native single tile; set `1024` for multi-crop detail).
 - `PHOTOSPHERE_AI_DTYPE`: Local AI floating-point dtype (`auto`, `float16`, `bfloat16`, `float32`; `auto` selects `bfloat16` on macOS MPS and CPU, and `bfloat16`/fallback `float16` on CUDA).

@@ -207,8 +207,9 @@ def init_command(
     ctx_obj = ctx.obj or {}
     effective_config_path = config_path or ctx_obj.get("config_path")
     credentials_path: Path | None = ctx_obj.get("credentials_path")
+    profile: str | None = ctx_obj.get("profile")
 
-    target_path = resolve_config_path(effective_config_path)
+    target_path = resolve_config_path(effective_config_path, profile=profile)
     if target_path.exists() and not force:
         existing = load_and_validate_config(target_path)
         click.echo(json.dumps(existing.model_dump(mode="json"), indent=2))

@@ -216,3 +216,46 @@ def test_verify_db_uses_load_remote_kv_store_and_handles_conflict(
     res_conflict = runner.invoke(cli, ["verify-db"])
     assert res_conflict.exit_code != 0
     assert "concurrent write conflict" in res_conflict.output
+
+
+def test_profile_confirmation_prompt_and_doctor_propagation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("STORAGE_EMULATOR_HOST", raising=False)
+    monkeypatch.delenv("PHOTOSPHERE_CACHE_DIR", raising=False)
+    monkeypatch.delenv("PHOTOSPHERE_MODELS_DIR", raising=False)
+    monkeypatch.delenv("PHOTOSPHERE_SKIPPED_DIR", raising=False)
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("photosphere.main._is_interactive_tty", lambda: True)
+
+    runner = CliRunner()
+
+    # Answering 'n' to DEFAULT profile prompt aborts cleanly.
+    aborted = runner.invoke(cli, ["doctor"], input="n\n")
+    assert aborted.exit_code != 0
+    assert 'Do you want to continue with profile "DEFAULT"?' in aborted.output
+
+    # Answering 'y' to explicit profile proceeds and propagates to doctor report.
+    confirmed = runner.invoke(cli, ["--profile", "work", "doctor"], input="y\n")
+    assert 'Do you want to continue with profile "work"?' in confirmed.output
+    json_start = confirmed.output.index("{")
+    payload = json.loads(confirmed.output[json_start:])
+    assert payload["profile"] == "work"
+    assert payload["cache_dir"] == str(
+        tmp_path / ".photosphere" / "profiles" / "work" / "cache"
+    )
+    assert payload["skipped_dir"] == str(
+        tmp_path / ".photosphere" / "profiles" / "work" / "skipped"
+    )
+    assert payload["models_dir"] == str(tmp_path / ".photosphere" / "cache")
+
+    # --yes skips the prompt; version skips the prompt; invalid profile fails.
+    auto_yes = runner.invoke(cli, ["--profile", "work", "--yes", "doctor"])
+    assert "Do you want to continue" not in auto_yes.output
+    ver = runner.invoke(cli, ["version"])
+    assert ver.exit_code == 0
+    assert "Do you want to continue" not in ver.output
+    bad = runner.invoke(cli, ["--profile", "bad/name", "version"])
+    assert bad.exit_code != 0
+    assert "Invalid profile name" in bad.output

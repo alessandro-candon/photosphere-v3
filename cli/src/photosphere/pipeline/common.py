@@ -26,7 +26,7 @@ def create_ai_provider(
     return loader(
         settings.device,
         dtype=settings.ai_dtype,
-        cache_dir=settings.cache_dir,
+        cache_dir=settings.models_dir,
         max_image_size=settings.ai_max_image_size,
         provider_mode=settings.ai_provider,
         api_url=settings.ai_api_url,
@@ -121,7 +121,7 @@ def sync_target_language_dictionaries(
     """Translate missing en_ label/caption entries into target_lang and upload."""
     lang = target_lang or settings.target_lang
     active_translator = translator or EasyNMTTranslator(
-        settings.cache_dir / "easynmt",
+        settings.models_dir / "easynmt",
         offline=settings.ai_offline,
     )
     tgt_labels, tgt_l_gen = load_remote_kv_store(

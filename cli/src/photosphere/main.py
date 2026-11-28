@@ -21,9 +21,12 @@ from photosphere.ai.protocol import (
 )
 from photosphere.ai.translator import EasyNMTTranslator
 from photosphere.config import (
+    DEFAULT_PROFILE,
     ConfigFileError,
     PhotosphereSettings,
     RoutingMode,
+    normalize_profile_name,
+    profile_display_name,
     resolve_photosphere_config_path,
 )
 from photosphere.init.command import init_command
@@ -59,7 +62,29 @@ def _configure_logging(*, verbose: bool = False) -> None:
     )
 
 
+_SKIP_PROFILE_PROMPT_COMMANDS = {"version", "prefetch-models"}
+
+
+def _is_interactive_tty() -> bool:
+    """Return True when stdin is attached to an interactive terminal."""
+    return sys.stdin.isatty()
+
+
 @click.group()
+@click.option(
+    "--profile",
+    default=DEFAULT_PROFILE,
+    envvar="PHOTOSPHERE_PROFILE",
+    show_default=True,
+    help="Profile name for isolated config, thumbnails, checkpoints, and DB snapshots.",
+)
+@click.option(
+    "-y",
+    "--yes",
+    "assume_yes",
+    is_flag=True,
+    help="Auto-confirm the active profile prompt.",
+)
 @click.option(
     "--config-file",
     type=click.Path(dir_okay=False, path_type=Path),
@@ -86,6 +111,8 @@ def _configure_logging(*, verbose: bool = False) -> None:
 @click.pass_context
 def cli(
     ctx: click.Context,
+    profile: str,
+    assume_yes: bool,
     config_file: Path | None,
     creds: Path | None,
     verbose: bool,
@@ -93,10 +120,33 @@ def cli(
 ) -> None:
     """Photosphere v3 CLI for project bootstrap, media ingestion, AI, and DB checks."""
     _configure_logging(verbose=verbose)
+    try:
+        normalized_profile = normalize_profile_name(profile)
+    except ValueError as exc:
+        raise click.BadParameter(str(exc), param_hint="'--profile'") from exc
     ctx.ensure_object(dict)
+    ctx.obj["profile"] = normalized_profile
+    ctx.obj["assume_yes"] = assume_yes
     ctx.obj["config_path"] = config_file
     ctx.obj["credentials_path"] = creds
     ctx.obj["show_progress"] = not no_progress
+
+    subcommand = ctx.invoked_subcommand
+    is_non_interactive_init = (
+        subcommand == "init" and "--non-interactive" in sys.argv[1:]
+    )
+    if (
+        subcommand is not None
+        and subcommand not in _SKIP_PROFILE_PROMPT_COMMANDS
+        and not assume_yes
+        and not is_non_interactive_init
+        and _is_interactive_tty()
+    ):
+        display = profile_display_name(normalized_profile)
+        if not click.confirm(
+            f'Do you want to continue with profile "{display}"?', default=True
+        ):
+            raise click.Abort()
 
 
 cli.add_command(init_command, name="init")
@@ -114,9 +164,12 @@ def _require_settings(
     config_path: Path | None = (
         ctx.obj.get("config_path") if ctx is not None and ctx.obj else None
     )
+    profile: str | None = (
+        ctx.obj.get("profile") if ctx is not None and ctx.obj else None
+    )
     try:
         return PhotosphereSettings.require_runtime_config(
-            config_path=config_path, **overrides
+            config_path=config_path, profile=profile, **overrides
         )
     except ConfigFileError as exc:
         raise click.ClickException(str(exc)) from exc
@@ -387,7 +440,7 @@ def translate(ctx: click.Context, target_lang: str, offline: bool) -> None:
     settings = _require_settings(ctx, **overrides)
     gcs_client = _build_gcs_client(ctx, settings)
     translator = EasyNMTTranslator(
-        settings.cache_dir / "easynmt",
+        settings.models_dir / "easynmt",
         offline=settings.ai_offline,
     )
     show_progress = bool(ctx.obj.get("show_progress", True)) if ctx.obj else True
@@ -553,7 +606,7 @@ def prefetch_models(
 ) -> None:
     """Pre-download Moondream2 and Opus-MT models into the shared cache directory."""
     defaults = PhotosphereSettings()
-    target_cache_dir = cache_dir if cache_dir is not None else defaults.cache_dir
+    target_cache_dir = cache_dir if cache_dir is not None else defaults.models_dir
     target_cache_dir.mkdir(parents=True, exist_ok=True)
     configure_hf_cache_env(target_cache_dir / "huggingface", offline=False)
 
@@ -596,28 +649,36 @@ def doctor(ctx: click.Context) -> None:
     """Diagnose config, GCP credentials, media libraries, and compute device."""
     config_path: Path | None = ctx.obj.get("config_path") if ctx.obj else None
     credentials_path: Path | None = ctx.obj.get("credentials_path") if ctx.obj else None
+    profile: str = (
+        ctx.obj.get("profile", DEFAULT_PROFILE) if ctx.obj else DEFAULT_PROFILE
+    )
     errors: list[str] = []
-    report: dict[str, Any] = {}
+    report: dict[str, Any] = {"profile": profile}
 
     try:
-        resolved_cfg = resolve_photosphere_config_path(config_path)
+        resolved_cfg = resolve_photosphere_config_path(config_path, profile=profile)
         report["config_path"] = str(resolved_cfg) if resolved_cfg else None
-        settings = PhotosphereSettings.require_runtime_config(config_path=config_path)
+        settings = PhotosphereSettings.require_runtime_config(
+            config_path=config_path, profile=profile
+        )
         report["gcp_project_id"] = settings.gcp_project_id
         report["media_bucket"] = settings.media_bucket
         report["data_bucket"] = settings.data_bucket
         report["skipped_dir"] = str(settings.skipped_dir)
         report["cache_dir"] = str(settings.cache_dir)
+        report["models_dir"] = str(settings.models_dir)
         report["ai_offline"] = settings.ai_offline
-        report["cached_models"] = _inspect_cached_models(settings.cache_dir)
+        report["cached_models"] = _inspect_cached_models(settings.models_dir)
         report["compute_device"] = resolve_device(settings.device)
     except ConfigFileError as exc:
         errors.append(f"config: {exc}")
         report["config_path"] = None
-        fallback_settings = PhotosphereSettings()
+        fallback_settings = PhotosphereSettings(profile=profile)
+        report["skipped_dir"] = str(fallback_settings.skipped_dir)
         report["cache_dir"] = str(fallback_settings.cache_dir)
+        report["models_dir"] = str(fallback_settings.models_dir)
         report["ai_offline"] = fallback_settings.ai_offline
-        report["cached_models"] = _inspect_cached_models(fallback_settings.cache_dir)
+        report["cached_models"] = _inspect_cached_models(fallback_settings.models_dir)
         report["compute_device"] = resolve_device()
 
     try:

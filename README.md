@@ -132,10 +132,29 @@ These flags can be placed **before** any subcommand (`photosphere [GLOBAL OPTION
 
 | Option | Description |
 | :--- | :--- |
+| `--profile <name>` | Active profile name (default: `default`, or `PHOTOSPHERE_PROFILE`). Isolates config, thumbnails, checkpoints, DB snapshots, and `skipped/` per profile while sharing AI models. |
+| `-y`, `--yes` | Auto-confirm the active profile prompt (`Do you want to continue with profile "DEFAULT"?`). |
 | `--config-file <path>` | Use a specific `photosphere.config.json` file. |
 | `--creds <path>` | Use a specific Google Cloud JSON credentials file. |
 | `-v`, `--verbose` | Enable detailed debug logging. |
 | `--no-progress` | Hide progress bars. |
+
+When running interactively, profile-scoped commands (`init`, `ingest`, `annotate`, `translate`, `verify-db`, `doctor`) first ask:
+
+```text
+Do you want to continue with profile "DEFAULT"? [Y/n]:
+```
+
+Pass `--yes` (or `-y`) to skip the prompt, or `--profile <name>` to run a separate ingestion concurrently on the same machine:
+
+```bash
+# Terminal 1 (default profile)
+photosphere ingest /path/to/personal-photos
+
+# Terminal 2 (isolated 'work' profile, sharing downloaded AI models)
+photosphere --profile work init
+photosphere --profile work ingest /path/to/work-photos
+```
 
 ---
 
@@ -400,9 +419,12 @@ photosphere ingest ~/Pictures/Trip \
 The CLI searches in this order and uses the first file it finds:
 1. `--config-file <path>` flag
 2. `PHOTOSPHERE_CONFIG_PATH` environment variable
-3. `./photosphere.config.json` (current directory)
-4. `../photosphere.config.json` (parent directory)
-5. `~/.photosphere/photosphere.config.json`
+3. `~/.photosphere/profiles/<profile>/photosphere.config.json`
+4. When `--profile` is `default` (omitted): `./photosphere.config.json`, `../photosphere.config.json`, then legacy `~/.photosphere/photosphere.config.json`
+
+### Shared vs. Profile-Scoped Directories (`~/.photosphere/`)
+- **Shared across all profiles:** `~/.photosphere/cache/` (`huggingface/`, `easynmt/` AI weights) and `~/.photosphere/credentials.json`.
+- **Isolated per profile (`~/.photosphere/profiles/<profile>/`):** `photosphere.config.json`, `cache/` (`thumbnails/`, `ingest_checkpoint.ndjson`, and `.json` DB snapshots), and `skipped/` (`skipped_manifest.json`).
 
 ### Where Photosphere Looks for Google Cloud Credentials
 1. `--creds <path>` flag
@@ -414,9 +436,11 @@ The CLI searches in this order and uses the first file it finds:
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
+| `PHOTOSPHERE_PROFILE` | `default` | Active profile name for isolated ingestion state. |
 | `PHOTOSPHERE_CONFIG_PATH` | *(auto-discovered)* | Path to `photosphere.config.json`. |
-| `PHOTOSPHERE_CACHE_DIR` | `~/.photosphere/cache` | Shared cache for AI models, thumbnails, checkpoints, and DB snapshots. |
-| `PHOTOSPHERE_SKIPPED_DIR` | `./skipped` | Folder where duplicates and unsupported files are moved. |
+| `PHOTOSPHERE_MODELS_DIR` | `~/.photosphere/cache` | Shared cache for Hugging Face and EasyNMT AI models. |
+| `PHOTOSPHERE_CACHE_DIR` | `~/.photosphere/profiles/<profile>/cache` | Per-profile cache for thumbnails, checkpoints, and DB snapshots. |
+| `PHOTOSPHERE_SKIPPED_DIR` | `~/.photosphere/profiles/<profile>/skipped` | Per-profile folder where duplicates and unsupported files are moved. |
 | `PHOTOSPHERE_AI_OFFLINE` | `0` | Set to `1` to always load AI/translation models strictly from local cache. |
 | `PHOTOSPHERE_AI_MAX_IMAGE_SIZE` | `378` | Max image dimension (px) sent to local AI. Increase to `1024` for finer detail (slower). |
 | `PHOTOSPHERE_AI_DTYPE` | `auto` | Local AI precision (`auto`, `float16`, `bfloat16`, `float32`). |

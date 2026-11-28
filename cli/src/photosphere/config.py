@@ -5,10 +5,11 @@ from __future__ import annotations
 import contextvars
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_settings import (
     BaseSettings,
@@ -17,11 +18,16 @@ from pydantic_settings import (
 )
 
 DEFAULT_CONFIG_FILENAME = "photosphere.config.json"
+DEFAULT_PROFILE = "default"
+_PROFILE_NAME_RE = re.compile(r"^[a-z0-9_-]+$")
 StorageClass = Literal["ARCHIVE", "STANDARD"]
 RoutingMode = Literal["chronological", "preserve"]
 AIProviderMode = Literal["local", "remote"]
 _CONFIG_PATH_OVERRIDE: contextvars.ContextVar[Path | None] = contextvars.ContextVar(
     "_CONFIG_PATH_OVERRIDE", default=None
+)
+_PROFILE_OVERRIDE: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "_PROFILE_OVERRIDE", default=None
 )
 
 
@@ -29,8 +35,42 @@ class ConfigFileError(RuntimeError):
     """Raised when photosphere.config.json is missing or invalid at runtime."""
 
 
-def resolve_photosphere_config_path(explicit_path: Path | None = None) -> Path | None:
-    """Locate photosphere.config.json from explicit, env, cwd, or ~/.photosphere."""
+def normalize_profile_name(profile: str | None) -> str:
+    """Normalize and validate a Photosphere profile name."""
+    if profile is None or not profile.strip():
+        return DEFAULT_PROFILE
+    normalized = profile.strip().lower()
+    if not _PROFILE_NAME_RE.match(normalized):
+        raise ValueError(
+            f"Invalid profile name '{profile}'. "
+            "Use lowercase letters, digits, '-' or '_'."
+        )
+    return normalized
+
+
+def profile_display_name(profile: str) -> str:
+    """Return user-facing display label for a profile ('DEFAULT' for default)."""
+    normalized = normalize_profile_name(profile)
+    return "DEFAULT" if normalized == DEFAULT_PROFILE else normalized
+
+
+def profile_root_dir(profile: str | None = None) -> Path:
+    """Return the per-profile root directory under ~/.photosphere/profiles."""
+    normalized = normalize_profile_name(profile)
+    return Path.home() / ".photosphere" / "profiles" / normalized
+
+
+def default_models_dir() -> Path:
+    """Return the shared AI model cache directory under ~/.photosphere/cache."""
+    return Path.home() / ".photosphere" / "cache"
+
+
+def resolve_photosphere_config_path(
+    explicit_path: Path | None = None,
+    *,
+    profile: str | None = None,
+) -> Path | None:
+    """Locate photosphere.config.json from explicit, env, profile, or fallback."""
     if explicit_path is not None:
         resolved = explicit_path.expanduser().resolve()
         if not resolved.exists():
@@ -42,11 +82,21 @@ def resolve_photosphere_config_path(explicit_path: Path | None = None) -> Path |
         if not candidate.exists():
             raise ConfigFileError(f"PHOTOSPHERE_CONFIG_PATH not found: {candidate}")
         return candidate
-    for candidate in (
-        Path.cwd() / DEFAULT_CONFIG_FILENAME,
-        Path.cwd().parent / DEFAULT_CONFIG_FILENAME,
-        Path.home() / ".photosphere" / DEFAULT_CONFIG_FILENAME,
-    ):
+    active_profile = normalize_profile_name(
+        profile if profile is not None else _PROFILE_OVERRIDE.get()
+    )
+    candidates: list[Path] = [
+        profile_root_dir(active_profile) / DEFAULT_CONFIG_FILENAME
+    ]
+    if active_profile == DEFAULT_PROFILE:
+        candidates.extend(
+            [
+                Path.cwd() / DEFAULT_CONFIG_FILENAME,
+                Path.cwd().parent / DEFAULT_CONFIG_FILENAME,
+                Path.home() / ".photosphere" / DEFAULT_CONFIG_FILENAME,
+            ]
+        )
+    for candidate in candidates:
         if candidate.exists():
             return candidate.resolve()
     return None
@@ -75,7 +125,10 @@ def _extract_settings_from_json(path: Path) -> dict[str, Any]:
 class _PhotosphereJsonSource(PydanticBaseSettingsSource):
     def __init__(self, settings_cls: type[BaseSettings]) -> None:
         super().__init__(settings_cls)
-        path = _CONFIG_PATH_OVERRIDE.get() or resolve_photosphere_config_path()
+        active_profile = _PROFILE_OVERRIDE.get()
+        path = _CONFIG_PATH_OVERRIDE.get() or resolve_photosphere_config_path(
+            profile=active_profile
+        )
         self._data: dict[str, Any] = (
             _extract_settings_from_json(path) if path is not None else {}
         )
@@ -120,16 +173,53 @@ class PhotosphereSettings(BaseSettings):
         default="STANDARD",
         description="Expected GCS storage class for the data bucket.",
     )
+    profile: str = Field(
+        default=DEFAULT_PROFILE,
+        description="Active Photosphere profile name.",
+    )
     skipped_dir: Path = Field(
-        default=Path("./skipped"),
+        default_factory=lambda: profile_root_dir(DEFAULT_PROFILE) / "skipped",
         description="Local directory for unsupported and duplicate files.",
     )
     cache_dir: Path = Field(
-        default_factory=lambda: Path.home() / ".photosphere" / "cache",
+        default_factory=lambda: profile_root_dir(DEFAULT_PROFILE) / "cache",
         description=(
-            "Local cache for checkpoints, DB snapshots, thumbnails, and AI models."
+            "Per-profile local cache for checkpoints, DB snapshots, and thumbnails."
         ),
     )
+    models_dir: Path = Field(
+        default_factory=default_models_dir,
+        description="Shared local cache for Hugging Face and EasyNMT AI models.",
+    )
+
+    @field_validator("profile")
+    @classmethod
+    def _validate_profile(cls, value: str) -> str:
+        return normalize_profile_name(value)
+
+    def model_post_init(self, __context: Any) -> None:
+        """Scope default cache_dir/skipped_dir to active profile unless overridden."""
+        default_cache = profile_root_dir(DEFAULT_PROFILE) / "cache"
+        default_skipped = profile_root_dir(DEFAULT_PROFILE) / "skipped"
+        cache_overridden = (
+            bool(os.getenv("PHOTOSPHERE_CACHE_DIR"))
+            or self.cache_dir != default_cache
+        )
+        if cache_overridden:
+            if (
+                not os.getenv("PHOTOSPHERE_MODELS_DIR")
+                and self.models_dir == default_models_dir()
+            ):
+                self.models_dir = self.cache_dir
+        elif self.profile != DEFAULT_PROFILE:
+            self.cache_dir = profile_root_dir(self.profile) / "cache"
+
+        if (
+            self.profile != DEFAULT_PROFILE
+            and not os.getenv("PHOTOSPHERE_SKIPPED_DIR")
+            and self.skipped_dir == default_skipped
+        ):
+            self.skipped_dir = profile_root_dir(self.profile) / "skipped"
     missing_date_prefix: str = Field(
         default="no_datetime",
         description="Object key prefix used when media lacks creation timestamp.",
@@ -204,29 +294,41 @@ class PhotosphereSettings(BaseSettings):
     def require_runtime_config(
         cls,
         config_path: Path | None = None,
+        *,
+        profile: str | None = None,
         **overrides: Any,
     ) -> PhotosphereSettings:
         """Load settings and fail fast if photosphere.config.json is absent."""
-        if os.getenv("STORAGE_EMULATOR_HOST"):
-            return cls(**overrides)
-        resolved = resolve_photosphere_config_path(config_path)
-        if resolved is None:
-            raise ConfigFileError(
-                "Missing photosphere.config.json. Place it at "
-                "~/.photosphere/photosphere.config.json, pass --config-file <path>, "
-                "or run `photosphere init` (or `make init` in the repository)."
+        active_profile = normalize_profile_name(profile)
+        prof_token = _PROFILE_OVERRIDE.set(active_profile)
+        try:
+            if os.getenv("STORAGE_EMULATOR_HOST"):
+                return cls(profile=active_profile, **overrides)
+            resolved = resolve_photosphere_config_path(
+                config_path, profile=active_profile
             )
-        try:
-            _extract_settings_from_json(resolved)
-        except (OSError, KeyError, json.JSONDecodeError) as exc:
-            raise ConfigFileError(
-                f"Invalid photosphere.config.json at {resolved}: {exc}"
-            ) from exc
-        token = _CONFIG_PATH_OVERRIDE.set(resolved)
-        try:
-            return cls(**overrides)
+            if resolved is None:
+                expected_profile_cfg = (
+                    profile_root_dir(active_profile) / DEFAULT_CONFIG_FILENAME
+                )
+                raise ConfigFileError(
+                    f"Missing photosphere.config.json for profile '{active_profile}'. "
+                    f"Place it at {expected_profile_cfg}, pass --config-file <path>, "
+                    "or run `photosphere init`."
+                )
+            try:
+                _extract_settings_from_json(resolved)
+            except (OSError, KeyError, json.JSONDecodeError) as exc:
+                raise ConfigFileError(
+                    f"Invalid photosphere.config.json at {resolved}: {exc}"
+                ) from exc
+            token = _CONFIG_PATH_OVERRIDE.set(resolved)
+            try:
+                return cls(profile=active_profile, **overrides)
+            finally:
+                _CONFIG_PATH_OVERRIDE.reset(token)
         finally:
-            _CONFIG_PATH_OVERRIDE.reset(token)
+            _PROFILE_OVERRIDE.reset(prof_token)
 
     @property
     def skipped_manifest_path(self) -> Path:

@@ -243,6 +243,32 @@ def test_fast_path_prints_existing_config_without_network(
     assert parsed["auth"]["allowed_emails"] == ["alice@example.com"]
 
 
+def test_init_profile_isolates_config_from_cwd(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("PHOTOSPHERE_CONFIG_PATH", raising=False)
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    # Place a different config in CWD; --profile work must not read or overwrite it.
+    cwd_cfg = _sample_config()
+    cwd_cfg.gcp.project_id = "cwd-proj"
+    write_config_atomic(tmp_path / "photosphere.config.json", cwd_cfg)
+
+    work_cfg = _sample_config()
+    work_cfg.gcp.project_id = "work-proj"
+    write_config_atomic(
+        tmp_path / ".photosphere" / "profiles" / "work" / "photosphere.config.json",
+        work_cfg,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["--profile", "work", "init"])
+    assert result.exit_code == 0, result.output
+    parsed = json.loads(result.output)
+    assert parsed["gcp"]["project_id"] == "work-proj"
+
+
 def test_provisioner_idempotent_rest_sequence_and_console_fallbacks(
     tmp_path: Path,
 ) -> None:
